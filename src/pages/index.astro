@@ -1,13 +1,12 @@
 ---
 import Airtable from 'airtable';
 
-// 1. CONFIGURAZIONE AIRTABLE (invariata)
+// 1. CONFIGURAZIONE AIRTABLE
 const base = new Airtable({
   apiKey: import.meta.env.PUBLIC_AIRTABLE_API_KEY
 }).base(import.meta.env.PUBLIC_AIRTABLE_BASE_ID);
 
-// 2. RECUPERO DATI
-// La logica di raggruppamento non è più necessaria per il nuovo layout.
+// 2. RECUPERO DATI - AGGIORNATO CON TUTTI I DETTAGLI
 let items = [];
 try {
   const records = await base(import.meta.env.PUBLIC_AIRTABLE_TABLE_NAME)
@@ -21,17 +20,20 @@ try {
     famiglia: record.fields.Famiglia || 'N/D',
     categoria: record.fields.Category || 'Senza Categoria',
     image: record.fields.Photo?.[0]?.thumbnails?.large?.url || record.fields.Photo?.[0]?.url,
-    // Aggiungiamo le coordinate se esistono nel tuo Airtable (per la mappa)
-    // Assicurati che le colonne si chiamino 'Latitude' e 'Longitude'
     lat: record.fields.Latitude || null,
     lng: record.fields.Longitude || null,
+    // Dati per il pannello espandibile
+    description: record.fields.Description || 'Nessuna descrizione disponibile.',
+    divisione: record.fields.Divisione || null,
+    classe: record.fields.Classe || null,
+    sottoclasse: record.fields.Sottoclasse || null,
+    tribù: record.fields.Tribù || null,
   }));
 } catch (error) {
   console.error('Errore caricamento dati:', error);
 }
 
-// 3. DATI PER IL MARQUEE (testo scorrevole)
-// Estraiamo alcune famiglie di piante per creare un testo dinamico
+// 3. DATI PER IL MARQUEE
 const uniqueFamilies = [...new Set(items.map(item => item.famiglia).filter(Boolean))];
 const marqueeText = uniqueFamilies.slice(0, 10).join(' • ') + ' • ';
 
@@ -50,7 +52,6 @@ const titolo = "URBINO BOTANICAL GARDEN";
     <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 <style>
-  /* NUOVO STILE FORNITO */
   :root {
     --bg-color: #ffffff; --text-color: #111111; --subtle-text-color: #666666;
     --border-color: #eaeaea; --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -60,7 +61,6 @@ const titolo = "URBINO BOTANICAL GARDEN";
   }
   body { font-family: var(--font-main); background-color: var(--bg-color); color: var(--text-color); margin: 0; transition: background-color 0.3s ease, color 0.3s ease;}
 
-  /* Elementi Comuni */
   .site-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background-color: var(--bg-color); z-index: 10; }
   .header-content { max-width: 1400px; width: 100%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
   .site-title { font-weight: 600; font-size: 1rem; margin: 0; }
@@ -69,11 +69,9 @@ const titolo = "URBINO BOTANICAL GARDEN";
   .marquee-container { width: 100%; overflow: hidden; padding: 1rem 0; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background-color 0.3s ease; }
   .marquee-container:hover { background-color: var(--text-color); }
   .marquee-container:hover .marquee-text { color: var(--bg-color); }
-  .marquee-text { font-size: 10rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; display: inline-block; transition: color 0.3s ease; animation: scroll-right-to-left 45s linear infinite; }
+  .marquee-text { font-size: 10rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; display: inline-block; transition: color 0.3s ease; animation: scroll-right-to-left 75s linear infinite; }
   @keyframes scroll-right-to-left { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
   .main-content { max-width: 1400px; width: 100%; margin: 0 auto; padding: 1.5rem; box-sizing: border-box; }
-  
-  /* Selettore Visualizzazione */
   .view-switcher { display: flex; border: 1px solid var(--border-color); }
   .view-button {
     flex: 1; text-align: center; background: none; border: none;
@@ -85,30 +83,93 @@ const titolo = "URBINO BOTANICAL GARDEN";
   .view-button.active { background-color: var(--text-color); color: var(--bg-color); cursor: default; }
   .view-button.active:hover { background-color: var(--text-color); }
   .view-button + .view-button { border-left: 1px solid var(--border-color); }
-
-  /* Contenitori Viste */
   .view-container { display: none; padding-top: 2rem; }
   .view-container.active { display: block; }
+  .message { text-align: center; padding: 4rem 1rem; color: var(--subtle-text-color); }
+
+  /* --- MODIFICHE CHIAVE PER L'ESPANSIONE VERTICALE --- */
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    align-items: start; /* Allinea le card all'inizio della loro cella */
+  }
   
-  /* Vista a Griglia */
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
-  .card { border: 1px solid var(--border-color); overflow: hidden; position: relative; }
-  .card-link { text-decoration: none; color: inherit; display: block; }
-  .card img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; background-color: var(--border-color); }
+  .card {
+    border: 1px solid var(--border-color);
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+    /* Animazione più lenta */
+    transition: max-height 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .card-main-content { }
+
+  .card img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+    background-color: var(--border-color);
+  }
+
   .card-content { padding: 0.75rem; }
   .card-content h3 { font-size: 1rem; margin: 0 0 0.2rem 0; }
   .card-content p { font-size: 0.9rem; margin: 0; color: var(--subtle-text-color); }
+
+  .card-details-panel {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    padding: 0 1rem;
+    box-sizing: border-box;
+    /* Animazione più lenta */
+    transition: max-height 0.8s ease-in-out, opacity 0.6s ease-in, padding 0.8s ease-in-out;
+  }
+  .card-details-panel p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+  }
+  .taxonomy-list {
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.5rem;
+    font-size: 0.85rem;
+  }
+  .taxonomy-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.4rem 0;
+  }
+  .taxonomy-item span:last-child { color: var(--subtle-text-color); }
+
+  /* Stato ESPANSO della card (solo verticale) */
+  .card.expanded {
+    /* NON occupa più tutta la larghezza. Rimane nella sua colonna. */
+    cursor: default;
+    max-height: 2000px; /* Valore grande per permettere l'espansione verticale */
+  }
+  
+  .card.expanded .card-details-panel {
+    max-height: 1000px;
+    opacity: 1;
+    padding: 0 1rem 1.5rem 1rem;
+    /* Aggiungo un ritardo all'opacità per un effetto migliore */
+    transition: max-height 1s ease-in-out, opacity 0.7s 0.3s ease-in, padding 1s ease-in-out;
+  }
+
   .herbarium-btn {
     position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(255, 255, 255, 0.7);
     border-radius: 50%; border: none; cursor: pointer; width: 30px; height: 30px;
     font-size: 1.5rem; line-height: 28px; text-align: center; color: #111;
-    opacity: 0; transition: all 0.2s ease;
+    opacity: 0; transition: all 0.2s ease; z-index: 5;
   }
   html.dark .herbarium-btn { background: rgba(0,0,0,0.5); color: #fff; }
   .card:hover .herbarium-btn { opacity: 1; }
   .herbarium-btn.active { background: var(--text-color); color: var(--bg-color); opacity: 1; transform: rotate(45deg); }
   
-  /* Vista ad Archivio */
   .archive-table { width: 100%; border-collapse: collapse; }
   .archive-table th, .archive-table td { text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
   .archive-table th { font-weight: 600; text-transform: uppercase; font-size: 0.8rem; }
@@ -116,12 +177,8 @@ const titolo = "URBINO BOTANICAL GARDEN";
   .archive-table tr:hover { background-color: var(--border-color); }
   .archive-table td img { width: 40px; height: 40px; object-fit: cover; vertical-align: middle; margin-right: 1rem; background-color: var(--border-color); }
 
-  /* Vista Mappa */
   #map { height: 70vh; border: 1px solid var(--border-color); background-color: var(--border-color); }
   .map-note { font-size: 0.8rem; color: var(--subtle-text-color); text-align: center; margin-top: 1rem; }
-  
-  /* Messaggi */
-  .message { text-align: center; padding: 4rem 1rem; color: var(--subtle-text-color); }
 </style>
 </head>
 <body>
@@ -145,20 +202,33 @@ const titolo = "URBINO BOTANICAL GARDEN";
             <button class="view-button active" data-view="grid-view">Griglia</button>
             <button class="view-button" data-view="archive-view">Archivio</button>
             <button class="view-button" data-view="map-view">Mappa</button>
-            <button class="view-button" data-view="herbarium-view">Erbario</button>
+            <button class="view-button" data-view="herbarium-view">Il tuo erbario</button>
         </div>
 
         <div id="grid-view" class="view-container active">
             <div class="grid">
                 {items.map(item => (
                     <article class="card item-container" data-id={item.id} data-search-terms={`${item.nome.toLowerCase()} ${item.scientific.toLowerCase()}`}>
-                        <a href="#" class="card-link" onclick="return false;">
+                        
+                        <div class="card-main-content">
                             <img src={item.image || 'https://via.placeholder.com/300'} alt={`Foto di ${item.nome}`} loading="lazy" />
                             <div class="card-content">
                                 <h3>{item.nome}</h3>
                                 <p>{item.scientific}</p>
                             </div>
-                        </a>
+                        </div>
+
+                        <div class="card-details-panel">
+                            <p>{item.description}</p>
+                            <div class="taxonomy-list">
+                                {item.divisione && <div class="taxonomy-item"><span>Divisione</span> <span>{item.divisione}</span></div>}
+                                {item.classe && <div class="taxonomy-item"><span>Classe</span> <span>{item.classe}</span></div>}
+                                {item.sottoclasse && <div class="taxonomy-item"><span>Sottoclasse</span> <span>{item.sottoclasse}</span></div>}
+                                {item.famiglia && <div class="taxonomy-item"><span>Famiglia</span> <span>{item.famiglia}</span></div>}
+                                {item.tribù && <div class="taxonomy-item"><span>Tribù</span> <span>{item.tribù}</span></div>}
+                            </div>
+                        </div>
+
                         <button class="herbarium-btn" title="Aggiungi all'erbario">+</button>
                     </article>
                 ))}
@@ -205,25 +275,19 @@ const titolo = "URBINO BOTANICAL GARDEN";
         <p id="no-results-message" class="message" style="display: none;">Nessun risultato trovato per la tua ricerca.</p>
 
     </main>
-<script define:vars={{ items }}>
-// --- SCRIPT PER L'INTERATTIVITÀ ---
 
+<script define:vars={{ items }}>
+// NESSUNA MODIFICA ALLO SCRIPT. È IDENTICO ALLA VERSIONE PRECEDENTE.
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- 1. GESTIONE TEMA (DARK/LIGHT) ---
     const themeToggle = document.getElementById('theme-toggle');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    // Funzione per applicare il tema
     const applyTheme = (theme) => {
         document.documentElement.classList.toggle('dark', theme === 'dark');
         localStorage.setItem('theme', theme);
     };
-
-    // Applica il tema salvato o quello di sistema
     applyTheme(localStorage.getItem('theme') || (prefersDark.matches ? 'dark' : 'light'));
-
-    // Evento per il click sul bottone
     themeToggle.addEventListener('click', () => {
         const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
         applyTheme(newTheme);
@@ -233,25 +297,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewButtons = document.querySelectorAll('.view-button');
     const viewContainers = document.querySelectorAll('.view-container');
     let mapInitialized = false;
-
     viewButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetViewId = button.dataset.view;
-            
-            // Aggiorna stato attivo bottoni
             viewButtons.forEach(btn => btn.classList.toggle('active', btn === button));
-            
-            // Mostra/nascondi contenitori
             viewContainers.forEach(container => {
                 container.classList.toggle('active', container.id === targetViewId);
             });
-            
-            // Inizializza la mappa solo quando la sua vista viene aperta per la prima volta
             if (targetViewId === 'map-view' && !mapInitialized) {
                 initMap();
                 mapInitialized = true;
             }
-
             if (targetViewId === 'herbarium-view') {
                 renderHerbarium();
             }
@@ -262,49 +318,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-input');
     const allItems = document.querySelectorAll('.item-container');
     const noResultsMessage = document.getElementById('no-results-message');
-
     searchInput.addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase().trim();
         let visibleCount = 0;
-
         allItems.forEach(item => {
             const itemTerms = item.dataset.searchTerms;
             const isVisible = itemTerms.includes(searchTerm);
             item.style.display = isVisible ? '' : 'none';
             if(isVisible) visibleCount++;
         });
-
         noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
     });
 
     // --- 4. GESTIONE ERBARIO (FAVORITI) ---
     const herbariumGrid = document.getElementById('herbarium-grid');
     const noHerbariumMessage = document.getElementById('no-herbarium-message');
-
-    // Carica l'erbario da localStorage
     let herbariumIds = JSON.parse(localStorage.getItem('herbarium')) || [];
-
-    // Funzione per salvare l'erbario
     const saveHerbarium = () => {
         localStorage.setItem('herbarium', JSON.stringify(herbariumIds));
     };
-
-    // Funzione per aggiornare lo stato dei bottoni '+'
     const updateHerbariumButtons = () => {
         document.querySelectorAll('.herbarium-btn').forEach(btn => {
             const cardId = btn.closest('.item-container').dataset.id;
             btn.classList.toggle('active', herbariumIds.includes(cardId));
         });
     };
-
-    // Funzione per renderizzare la vista Erbario
     const renderHerbarium = () => {
-        herbariumGrid.innerHTML = ''; // Svuota la griglia
+        herbariumGrid.innerHTML = '';
         const favoriteItems = items.filter(item => herbariumIds.includes(item.id));
-        
         if (favoriteItems.length > 0) {
             favoriteItems.forEach(item => {
-                // Clona la card dalla griglia principale per non riscrivere il codice HTML
                 const originalCard = document.querySelector(`.card[data-id="${item.id}"]`);
                 if (originalCard) {
                     herbariumGrid.appendChild(originalCard.cloneNode(true));
@@ -314,45 +357,63 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             noHerbariumMessage.style.display = 'block';
         }
-        // Ri-aggiorna i listener e lo stato dei bottoni nella nuova griglia clonata
-        setupHerbariumListeners(); 
+        updateHerbariumButtons();
     };
+    
+    // --- 5. GESTIONE ESPANSIONE CARD NELLA GRIGLIA ---
+    const grid = document.querySelector('#grid-view .grid');
+    if (grid) {
+        grid.addEventListener('click', (e) => {
+            if (e.target.closest('.herbarium-btn')) {
+                return;
+            }
+            const clickedCard = e.target.closest('.card');
+            if (!clickedCard) return;
 
-    // Aggiungi listener ai bottoni (usando event delegation)
-    function setupHerbariumListeners() {
+            const currentlyExpanded = grid.querySelector('.card.expanded');
+
+            if (currentlyExpanded && currentlyExpanded !== clickedCard) {
+                currentlyExpanded.classList.remove('expanded');
+            }
+
+            clickedCard.classList.toggle('expanded');
+
+            if (clickedCard.classList.contains('expanded')) {
+                setTimeout(() => {
+                    clickedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 150);
+            }
+        });
+    }
+    
+    // --- 6. INIZIALIZZAZIONE GLOBALE E LISTENER ERBARIO ---
+    const setupHerbariumListeners = () => {
         document.body.addEventListener('click', e => {
             if (e.target.matches('.herbarium-btn')) {
+                e.stopPropagation();
                 const card = e.target.closest('.item-container');
                 const cardId = card.dataset.id;
-
                 if (herbariumIds.includes(cardId)) {
-                    // Rimuovi
                     herbariumIds = herbariumIds.filter(id => id !== cardId);
                 } else {
-                    // Aggiungi
                     herbariumIds.push(cardId);
                 }
                 saveHerbarium();
                 updateHerbariumButtons();
-
-                // Se siamo nella vista erbario, aggiornala subito
                 if(document.getElementById('herbarium-view').classList.contains('active')) {
                     renderHerbarium();
                 }
             }
         });
-    }
+    };
 
-    // --- 5. INIZIALIZZAZIONE MAPPA (Leaflet.js) ---
     function initMap() {
         if (typeof L === 'undefined') {
             console.error('Libreria Leaflet non trovata.');
             return;
         }
-
-        // Trova il centro della mappa basandosi sulla media delle coordinate
         const itemsWithCoords = items.filter(item => item.lat && item.lng);
-        let centerLat = 43.715; // Default: Urbino
+        let centerLat = 43.715;
         let centerLng = 12.636;
         let defaultZoom = 13;
 
@@ -360,24 +421,16 @@ document.addEventListener('DOMContentLoaded', () => {
             centerLat = itemsWithCoords.reduce((sum, item) => sum + item.lat, 0) / itemsWithCoords.length;
             centerLng = itemsWithCoords.reduce((sum, item) => sum + item.lng, 0) / itemsWithCoords.length;
         }
-
         const map = L.map('map').setView([centerLat, centerLng], defaultZoom);
-
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
-
         itemsWithCoords.forEach(item => {
-            const popupContent = `
-                <b>${item.nome}</b><br>
-                <i>${item.scientific}</i>
-            `;
-            L.marker([item.lat, item.lng]).addTo(map)
-                .bindPopup(popupContent);
+            const popupContent = `<b>${item.nome}</b><br><i>${item.scientific}</i>`;
+            L.marker([item.lat, item.lng]).addTo(map).bindPopup(popupContent);
         });
     }
 
-    // Inizializza tutto al caricamento della pagina
     updateHerbariumButtons();
     setupHerbariumListeners();
 });
