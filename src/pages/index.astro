@@ -6,43 +6,34 @@ const base = new Airtable({
   apiKey: import.meta.env.PUBLIC_AIRTABLE_API_KEY
 }).base(import.meta.env.PUBLIC_AIRTABLE_BASE_ID);
 
-// 2. RECUPERO DATI CON LA NUOVA STRUTTURA
+// 2. RECUPERO DATI
+// La logica di raggruppamento non è più necessaria per il nuovo layout.
 let items = [];
 try {
   const records = await base(import.meta.env.PUBLIC_AIRTABLE_TABLE_NAME)
-    .select({ maxRecords: 100, sort: [{field: "Name", direction: "asc"}] }) // Ordina alfabeticamente per nome
+    .select({ maxRecords: 100, sort: [{field: "Name", direction: "asc"}] })
     .all();
  
-  // Mappa i record con tutti i nuovi campi
   items = records.map(record => ({
     id: record.id,
-    nome: record.fields.Name,
-    scientific: record.fields.Scientific,
-    description: record.fields.Description,
-    image: record.fields.Photo?.[0]?.url,
-    categoria: record.fields.Category || 'Senza Categoria', // Fallback se la categoria manca
-    // Campi tassonomici aggiuntivi
-    divisione: record.fields.Divisione,
-    classe: record.fields.Classe,
-    sottoclasse: record.fields.Sottoclasse,
-    ordine: record.fields.Ordine,
-    famiglia: record.fields.Famiglia,
-    tribù: record.fields.Tribù,
-    genere: record.fields.Genere
+    nome: record.fields.Name || 'N/D',
+    scientific: record.fields.Scientific || 'N/D',
+    famiglia: record.fields.Famiglia || 'N/D',
+    categoria: record.fields.Category || 'Senza Categoria',
+    image: record.fields.Photo?.[0]?.thumbnails?.large?.url || record.fields.Photo?.[0]?.url,
+    // Aggiungiamo le coordinate se esistono nel tuo Airtable (per la mappa)
+    // Assicurati che le colonne si chiamino 'Latitude' e 'Longitude'
+    lat: record.fields.Latitude || null,
+    lng: record.fields.Longitude || null,
   }));
 } catch (error) {
   console.error('Errore caricamento dati:', error);
 }
 
-// 3. RAGGRUPPAMENTO PER CATEGORIA (dal primo codice, adattato)
-const groupedItems = {};
-items.forEach(item => {
-  if (!groupedItems[item.categoria]) {
-    groupedItems[item.categoria] = [];
-  }
-  groupedItems[item.categoria].push(item);
-});
-
+// 3. DATI PER IL MARQUEE (testo scorrevole)
+// Estraiamo alcune famiglie di piante per creare un testo dinamico
+const uniqueFamilies = [...new Set(items.map(item => item.famiglia).filter(Boolean))];
+const marqueeText = uniqueFamilies.slice(0, 10).join(' • ') + ' • ';
 
 const titolo = "URBINO BOTANICAL GARDEN";
 ---
@@ -54,345 +45,342 @@ const titolo = "URBINO BOTANICAL GARDEN";
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <title>{titolo}</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
 <style>
-    /* Stile del primo codice - completamente ripreso */
-    :root {
-      --verde-scuro: #ffffff;
-      --testo-chiaro: rgba(242, 242, 242, 0.94);
-      --verde-card: #121212;
-      --verde-sfondo: #080808;
-      --ombreggiatura: rgba(0, 0, 0, 0.05);
-      --ombreggiatura-hover: rgba(0, 0, 0, 0.1);
-      --bordo-colore: #2e2e2e;
-      --scrollbar-bg: #202020;
-      --scrollbar-thumb: #3e3e3e;
-    }
+  /* NUOVO STILE FORNITO */
+  :root {
+    --bg-color: #ffffff; --text-color: #111111; --subtle-text-color: #666666;
+    --border-color: #eaeaea; --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  html.dark {
+    --bg-color: #111111; --text-color: #eaeaea; --subtle-text-color: #999999; --border-color: #333333;
+  }
+  body { font-family: var(--font-main); background-color: var(--bg-color); color: var(--text-color); margin: 0; transition: background-color 0.3s ease, color 0.3s ease;}
 
-    body {
-      background-color: var(--verde-sfondo);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-      color: var(--verde-scuro);
-      margin: 0;
-      padding: 3rem;
-    }
-    
-    .main-title, .category-title {
-        padding-bottom: 1rem;
-        border-bottom: 1px solid var(--bordo-colore);
-    }
-    .main-title {
-        font-size: 1.5rem;
-        text-align: left;
-    }
-    .category-section {
-        margin-bottom: 4rem;
-    }
-    .category-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-    }
-    
-    /* Galleria scorrevole */
-    .grid {
-      display: flex;
-      overflow-x: auto;
-      flex-wrap: nowrap;
-      gap: 1.5rem;
-      padding-block: 1.5rem;
-      scroll-snap-type: x mandatory;
-      -webkit-overflow-scrolling: touch;
-    }
+  /* Elementi Comuni */
+  .site-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background-color: var(--bg-color); z-index: 10; }
+  .header-content { max-width: 1400px; width: 100%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+  .site-title { font-weight: 600; font-size: 1rem; margin: 0; }
+  .site-nav { display: flex; align-items: center; gap: 0.5rem; }
+  #search-input, #theme-toggle { background: none; border: 1px solid var(--border-color); border-radius: 99px; color: var(--text-color); padding: 0.4rem 0.8rem; font-size: 0.9rem; cursor: pointer; }
+  .marquee-container { width: 100%; overflow: hidden; padding: 1rem 0; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background-color 0.3s ease; }
+  .marquee-container:hover { background-color: var(--text-color); }
+  .marquee-container:hover .marquee-text { color: var(--bg-color); }
+  .marquee-text { font-size: 10rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; display: inline-block; transition: color 0.3s ease; animation: scroll-right-to-left 45s linear infinite; }
+  @keyframes scroll-right-to-left { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
+  .main-content { max-width: 1400px; width: 100%; margin: 0 auto; padding: 1.5rem; box-sizing: border-box; }
+  
+  /* Selettore Visualizzazione */
+  .view-switcher { display: flex; border: 1px solid var(--border-color); }
+  .view-button {
+    flex: 1; text-align: center; background: none; border: none;
+    color: var(--subtle-text-color); padding: 1rem 0; cursor: pointer;
+    font-size: 0.9rem; font-weight: 500; text-transform: uppercase;
+    transition: all 0.2s ease;
+  }
+  .view-button:hover { background-color: var(--border-color); }
+  .view-button.active { background-color: var(--text-color); color: var(--bg-color); cursor: default; }
+  .view-button.active:hover { background-color: var(--text-color); }
+  .view-button + .view-button { border-left: 1px solid var(--border-color); }
 
-    /* Stile delle Card */
-    .card {
-      width: 280px; /* Leggermente più larga per contenere più testo */
-      flex-shrink: 0;
-      scroll-snap-align: start;
-      background-color: var(--verde-card);
-      color: var(--verde-scuro);
-      border-radius: 3px;
-      overflow: hidden;
-      border: 1px solid var(--bordo-colore);
-      box-shadow: 0 4px 6px var(--ombreggiatura);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .card-content {
-        padding: 1rem;
-        display: flex;
-        flex-direction: column;
-        flex-grow: 1;
-    }
+  /* Contenitori Viste */
+  .view-container { display: none; padding-top: 2rem; }
+  .view-container.active { display: block; }
+  
+  /* Vista a Griglia */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+  .card { border: 1px solid var(--border-color); overflow: hidden; position: relative; }
+  .card-link { text-decoration: none; color: inherit; display: block; }
+  .card img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; background-color: var(--border-color); }
+  .card-content { padding: 0.75rem; }
+  .card-content h3 { font-size: 1rem; margin: 0 0 0.2rem 0; }
+  .card-content p { font-size: 0.9rem; margin: 0; color: var(--subtle-text-color); }
+  .herbarium-btn {
+    position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(255, 255, 255, 0.7);
+    border-radius: 50%; border: none; cursor: pointer; width: 30px; height: 30px;
+    font-size: 1.5rem; line-height: 28px; text-align: center; color: #111;
+    opacity: 0; transition: all 0.2s ease;
+  }
+  html.dark .herbarium-btn { background: rgba(0,0,0,0.5); color: #fff; }
+  .card:hover .herbarium-btn { opacity: 1; }
+  .herbarium-btn.active { background: var(--text-color); color: var(--bg-color); opacity: 1; transform: rotate(45deg); }
+  
+  /* Vista ad Archivio */
+  .archive-table { width: 100%; border-collapse: collapse; }
+  .archive-table th, .archive-table td { text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
+  .archive-table th { font-weight: 600; text-transform: uppercase; font-size: 0.8rem; }
+  .archive-table tr { transition: background-color 0.2s ease; }
+  .archive-table tr:hover { background-color: var(--border-color); }
+  .archive-table td img { width: 40px; height: 40px; object-fit: cover; vertical-align: middle; margin-right: 1rem; background-color: var(--border-color); }
 
-    .card img {  
-      width: 100%;  
-      height: 160px;
-      object-fit: cover;  
-      display: block;
-      transition: transform 0.3s ease;
-    }
-
-    .card h2 {  
-      font-size: 1.2rem;
-      margin: 0 0 0.25rem 0;
-    }
-    .card h4 {  
-      font-size: 0.9rem;
-      font-style: italic;
-      font-weight: normal;
-      margin: 0 0 1rem 0;  
-      opacity: 0.7;  
-    }
-    .card .description { /* Classe specifica per la descrizione */
-      font-size: 0.85rem;
-      line-height: 1.5;  
-      margin: auto 0 0 0; /* Spinge la descrizione in basso */
-      padding-top: 1rem;  /* Spazio sopra la descrizione */
-      flex-grow: 1;
-      text-align: left;  
-    }
-
-    /* Dettagli tassonomici */
-    .taxonomic-details {
-        font-size: 0.75rem;
-        opacity: 0.6;
-        margin-bottom: 0.5rem;
-    }
-    .taxonomic-details p {
-        margin: 0.1rem 0;
-    }
-    
-    /* Effetti hover */
-    .card:hover {  
-      transform: translateY(-8px);  
-      box-shadow: 0 12px 20px var(--ombreggiatura-hover);  
-    }
-    .card:hover img {
-      transform: scale(1.05);
-    }
-    .card-image-wrapper { position: relative; overflow: hidden; }
-    .card-image-wrapper::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); opacity: 0; transition: opacity 0.3s ease; z-index: 1; }
-    .card:hover .card-image-wrapper::before { opacity: 1; }
-
-    /* Scrollbar */
-    .grid::-webkit-scrollbar { height: 8px; }
-    .grid::-webkit-scrollbar-track { background: var(--scrollbar-bg); border-radius: 4px; }
-    .grid::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
-    .grid::-webkit-scrollbar-thumb:hover { background: #555; }
-    
-    /* Stile del Form */
-    details {
-        margin-top: 2rem;
-        padding: 1.5rem;
-        border: 1px solid var(--bordo-colore);
-        border-radius: 3px;
-        background-color: var(--verde-card);
-    }
-    summary {
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 1.2rem;
-    }
-    .contribute-form {
-        margin-top: 1.5rem;
-        display: grid;
-        gap: 1rem;
-    }
-    .form-group {
-        display: flex;
-        flex-direction: column;
-    }
-    .form-group label {
-        margin-bottom: 0.5rem;
-        font-size: 0.9rem;
-        opacity: 0.8;
-    }
-    .form-group input,
-    .form-group textarea,
-    .form-group select {
-        width: 100%;
-        padding: 0.75rem;
-        background-color: var(--verde-sfondo);
-        border: 1px solid var(--bordo-colore);
-        border-radius: 3px;
-        color: var(--testo-chiaro);
-        font-size: 1rem;
-    }
-    .submit-btn {
-        padding: 0.75rem 1.5rem;
-        background-color: var(--verde-scuro);
-        color: var(--verde-sfondo);
-        border: none;
-        border-radius: 3px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: background-color 0.3s ease;
-    }
-    .submit-btn:hover {
-        background-color: #ccc;
-    }
-    .submit-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-    .form-message {
-        margin-top: 1rem;
-        padding: 1rem;
-        border-radius: 3px;
-    }
-    .form-message.success {
-        background-color: #28a74520;
-        color: #28a745;
-    }
-    .form-message.error {
-        background-color: #dc354520;
-        color: #dc3545;
-    }
+  /* Vista Mappa */
+  #map { height: 70vh; border: 1px solid var(--border-color); background-color: var(--border-color); }
+  .map-note { font-size: 0.8rem; color: var(--subtle-text-color); text-align: center; margin-top: 1rem; }
+  
+  /* Messaggi */
+  .message { text-align: center; padding: 4rem 1rem; color: var(--subtle-text-color); }
 </style>
 </head>
 <body>
-    <h1 class="main-title">{titolo}</h1>
 
-    {Object.entries(groupedItems).map(([category, categoryItems]) => (
-        <section class="category-section">
-            <h2 class="category-title">{category}</h2>
+    <header class="site-header">
+        <div class="header-content">
+            <h1 class="site-title">{titolo}</h1>
+            <nav class="site-nav">
+                <input type="search" id="search-input" placeholder="Cerca per nome...">
+                <button id="theme-toggle" title="Cambia tema">🌓</button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="marquee-container">
+        <div class="marquee-text">{marqueeText.repeat(5)}</div>
+    </div>
+
+    <main class="main-content">
+        <div class="view-switcher">
+            <button class="view-button active" data-view="grid-view">Griglia</button>
+            <button class="view-button" data-view="archive-view">Archivio</button>
+            <button class="view-button" data-view="map-view">Mappa</button>
+            <button class="view-button" data-view="herbarium-view">Erbario</button>
+        </div>
+
+        <div id="grid-view" class="view-container active">
             <div class="grid">
-                {categoryItems.map(item => (
-                    <article class="card">
-                        {item.image && (
-                            <div class="card-image-wrapper">
-                                <img src={item.image} alt={item.nome} />
+                {items.map(item => (
+                    <article class="card item-container" data-id={item.id} data-search-terms={`${item.nome.toLowerCase()} ${item.scientific.toLowerCase()}`}>
+                        <a href="#" class="card-link" onclick="return false;">
+                            <img src={item.image || 'https://via.placeholder.com/300'} alt={`Foto di ${item.nome}`} loading="lazy" />
+                            <div class="card-content">
+                                <h3>{item.nome}</h3>
+                                <p>{item.scientific}</p>
                             </div>
-                        )}
-                        <div class="card-content">
-                            <h2>{item.nome}</h2>
-                            <h4>{item.scientific}</h4>
-                            
-                            <div class="taxonomic-details">
-                                {item.famiglia && <p><strong>Famiglia:</strong> {item.famiglia}</p>}
-                                {item.genere && <p><strong>Genere:</strong> {item.genere}</p>}
-                                {item.classe && <p><strong>Classe:</strong> {item.classe}</p>}
-                            </div>
-                            
-                            <p class="description">{item.description}</p>
-                        </div>
+                        </a>
+                        <button class="herbarium-btn" title="Aggiungi all'erbario">+</button>
                     </article>
                 ))}
             </div>
-        </section>
-    ))}
-
-    <details class="contribute-section">
-      <summary>Vuoi contribuire all'archivio?</summary>
-      
-      <form id="contribute-form" class="contribute-form">
-        <div class="form-group">
-          <label for="name">Nome pianta*</label>
-          <input type="text" id="name" name="name" required>
-        </div>
-        
-        <div class="form-group">
-          <label for="scientific">Nome scientifico*</label>
-          <input type="text" id="scientific" name="scientific" required>
         </div>
 
-        <div class="form-group">
-          <label for="description">Descrizione*</label>
-          <textarea id="description" name="description" rows="4" required></textarea>
+        <div id="archive-view" class="view-container">
+            <table class="archive-table">
+                <thead>
+                    <tr>
+                        <th colspan="2">Nome Comune</th>
+                        <th>Nome Scientifico</th>
+                        <th>Famiglia</th>
+                        <th>Categoria</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {items.map(item => (
+                        <tr class="item-container" data-id={item.id} data-search-terms={`${item.nome.toLowerCase()} ${item.scientific.toLowerCase()}`}>
+                            <td><img src={item.image || 'https://via.placeholder.com/40'} alt={`Foto di ${item.nome}`} loading="lazy"/></td>
+                            <td>{item.nome}</td>
+                            <td>{item.scientific}</td>
+                            <td>{item.famiglia}</td>
+                            <td>{item.categoria}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
-        
-        <div class="form-group">
-          <label for="category">Categoria</label>
-          <select id="category" name="category">
-            <option value="">Seleziona...</option>
-            <option value="Areacea">Areacea</option>
-            <option value="Albero Caducifoglio">Albero Caducifoglio</option>
-            <option value="Conifera">Conifera</option>
-            <option value="Erbacea Aromatica">Erbacea Aromatica</option>
-            <option value="Erbacea Alimentare">Erbacea Alimentare</option>
-            <option value="Erbacea Officinale">Erbacea Officinale</option>
-            <option value="Arbusto Aromatico">Arbusto Aromatico</option>
-            <option value="Albero Sempreverde">Albero Sempreverde</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label for="image-url">URL Immagine</label>
-          <input type="url" id="image-url" name="imageUrl" placeholder="https://esempio.com/immagine.jpg">
-          <small>Inserisci il link di un'immagine già online (es: da Unsplash, Imgur, etc.)</small>
-        </div>
-        
-        <button type="submit" class="submit-btn">Invia contributo</button>
-        <div id="form-message"></div>
-      </form>
-    </details>
 
-<script>
-  document.getElementById('contribute-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
+        <div id="map-view" class="view-container">
+            <div id="map"></div>
+            <p class="map-note">Mostra le piante su una mappa. Assicurati di avere colonne "Latitude" e "Longitude" nel tuo Airtable.</p>
+        </div>
+
+        <div id="herbarium-view" class="view-container">
+             <div class="grid" id="herbarium-grid">
+                </div>
+             <p id="no-herbarium-message" class="message" style="display: none;">
+                Il tuo erbario è vuoto. Clicca sul '+' nelle schede delle piante per aggiungerle.
+            </p>
+        </div>
+
+        <p id="no-results-message" class="message" style="display: none;">Nessun risultato trovato per la tua ricerca.</p>
+
+    </main>
+<script define:vars={{ items }}>
+// --- SCRIPT PER L'INTERATTIVITÀ ---
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- 1. GESTIONE TEMA (DARK/LIGHT) ---
+    const themeToggle = document.getElementById('theme-toggle');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
     
-    const form = e.target;
-    const submitBtn = form.querySelector('.submit-btn');
-    const messageDiv = document.getElementById('form-message');
-    
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Invio in corso...';
-    messageDiv.textContent = '';
-    messageDiv.className = 'form-message';
-    
-    const imageUrl = document.getElementById('image-url').value.trim();
-    
-    // CORREZIONE: i nomi dei campi devono corrispondere a quelli di Airtable (es: "Name" non "title")
-    const formData = {
-      "Name": document.getElementById('name').value,
-      "Scientific": document.getElementById('scientific').value,
-      "Description": document.getElementById('description').value,
-      "Category": document.getElementById('category').value,
+    // Funzione per applicare il tema
+    const applyTheme = (theme) => {
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        localStorage.setItem('theme', theme);
     };
-    
-    // CORREZIONE: il campo immagine in Airtable si chiama "Photo"
-    if (imageUrl) {
-      formData.Photo = [{ url: imageUrl }];
-    }
-    
-    try {
-      const response = await fetch(`https://api.airtable.com/v0/${import.meta.env.PUBLIC_AIRTABLE_BASE_ID}/${import.meta.env.PUBLIC_AIRTABLE_TABLE_NAME}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.PUBLIC_AIRTABLE_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          records: [{
-            fields: formData
-          }]
-        })
-      });
-      
-      const responseData = await response.json();
-      
-      if (response.ok) {
-        messageDiv.textContent = '✅ Contributo inviato con successo! Ricarica la pagina per vederlo.';
-        messageDiv.className = 'form-message success';
-        form.reset();
-      } else {
-        console.error('Errore Airtable:', responseData);
-        messageDiv.textContent = `❌ Errore: ${responseData.error?.message || 'Errore sconosciuto'}`;
-        messageDiv.className = 'form-message error';
-      }
-    } catch (error) {
-      console.error('Errore generale:', error);
-      messageDiv.textContent = '❌ Errore durante l\'invio. Controlla la console.';
-      messageDiv.className = 'form-message error';
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Invia contributo';
-    }
-  });
-</script>
 
+    // Applica il tema salvato o quello di sistema
+    applyTheme(localStorage.getItem('theme') || (prefersDark.matches ? 'dark' : 'light'));
+
+    // Evento per il click sul bottone
+    themeToggle.addEventListener('click', () => {
+        const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+        applyTheme(newTheme);
+    });
+
+    // --- 2. GESTIONE CAMBIO VISUALIZZAZIONE ---
+    const viewButtons = document.querySelectorAll('.view-button');
+    const viewContainers = document.querySelectorAll('.view-container');
+    let mapInitialized = false;
+
+    viewButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetViewId = button.dataset.view;
+            
+            // Aggiorna stato attivo bottoni
+            viewButtons.forEach(btn => btn.classList.toggle('active', btn === button));
+            
+            // Mostra/nascondi contenitori
+            viewContainers.forEach(container => {
+                container.classList.toggle('active', container.id === targetViewId);
+            });
+            
+            // Inizializza la mappa solo quando la sua vista viene aperta per la prima volta
+            if (targetViewId === 'map-view' && !mapInitialized) {
+                initMap();
+                mapInitialized = true;
+            }
+
+            if (targetViewId === 'herbarium-view') {
+                renderHerbarium();
+            }
+        });
+    });
+
+    // --- 3. GESTIONE RICERCA ---
+    const searchInput = document.getElementById('search-input');
+    const allItems = document.querySelectorAll('.item-container');
+    const noResultsMessage = document.getElementById('no-results-message');
+
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        allItems.forEach(item => {
+            const itemTerms = item.dataset.searchTerms;
+            const isVisible = itemTerms.includes(searchTerm);
+            item.style.display = isVisible ? '' : 'none';
+            if(isVisible) visibleCount++;
+        });
+
+        noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
+    });
+
+    // --- 4. GESTIONE ERBARIO (FAVORITI) ---
+    const herbariumGrid = document.getElementById('herbarium-grid');
+    const noHerbariumMessage = document.getElementById('no-herbarium-message');
+
+    // Carica l'erbario da localStorage
+    let herbariumIds = JSON.parse(localStorage.getItem('herbarium')) || [];
+
+    // Funzione per salvare l'erbario
+    const saveHerbarium = () => {
+        localStorage.setItem('herbarium', JSON.stringify(herbariumIds));
+    };
+
+    // Funzione per aggiornare lo stato dei bottoni '+'
+    const updateHerbariumButtons = () => {
+        document.querySelectorAll('.herbarium-btn').forEach(btn => {
+            const cardId = btn.closest('.item-container').dataset.id;
+            btn.classList.toggle('active', herbariumIds.includes(cardId));
+        });
+    };
+
+    // Funzione per renderizzare la vista Erbario
+    const renderHerbarium = () => {
+        herbariumGrid.innerHTML = ''; // Svuota la griglia
+        const favoriteItems = items.filter(item => herbariumIds.includes(item.id));
+        
+        if (favoriteItems.length > 0) {
+            favoriteItems.forEach(item => {
+                // Clona la card dalla griglia principale per non riscrivere il codice HTML
+                const originalCard = document.querySelector(`.card[data-id="${item.id}"]`);
+                if (originalCard) {
+                    herbariumGrid.appendChild(originalCard.cloneNode(true));
+                }
+            });
+            noHerbariumMessage.style.display = 'none';
+        } else {
+            noHerbariumMessage.style.display = 'block';
+        }
+        // Ri-aggiorna i listener e lo stato dei bottoni nella nuova griglia clonata
+        setupHerbariumListeners(); 
+    };
+
+    // Aggiungi listener ai bottoni (usando event delegation)
+    function setupHerbariumListeners() {
+        document.body.addEventListener('click', e => {
+            if (e.target.matches('.herbarium-btn')) {
+                const card = e.target.closest('.item-container');
+                const cardId = card.dataset.id;
+
+                if (herbariumIds.includes(cardId)) {
+                    // Rimuovi
+                    herbariumIds = herbariumIds.filter(id => id !== cardId);
+                } else {
+                    // Aggiungi
+                    herbariumIds.push(cardId);
+                }
+                saveHerbarium();
+                updateHerbariumButtons();
+
+                // Se siamo nella vista erbario, aggiornala subito
+                if(document.getElementById('herbarium-view').classList.contains('active')) {
+                    renderHerbarium();
+                }
+            }
+        });
+    }
+
+    // --- 5. INIZIALIZZAZIONE MAPPA (Leaflet.js) ---
+    function initMap() {
+        if (typeof L === 'undefined') {
+            console.error('Libreria Leaflet non trovata.');
+            return;
+        }
+
+        // Trova il centro della mappa basandosi sulla media delle coordinate
+        const itemsWithCoords = items.filter(item => item.lat && item.lng);
+        let centerLat = 43.715; // Default: Urbino
+        let centerLng = 12.636;
+        let defaultZoom = 13;
+
+        if (itemsWithCoords.length > 0) {
+            centerLat = itemsWithCoords.reduce((sum, item) => sum + item.lat, 0) / itemsWithCoords.length;
+            centerLng = itemsWithCoords.reduce((sum, item) => sum + item.lng, 0) / itemsWithCoords.length;
+        }
+
+        const map = L.map('map').setView([centerLat, centerLng], defaultZoom);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        itemsWithCoords.forEach(item => {
+            const popupContent = `
+                <b>${item.nome}</b><br>
+                <i>${item.scientific}</i>
+            `;
+            L.marker([item.lat, item.lng]).addTo(map)
+                .bindPopup(popupContent);
+        });
+    }
+
+    // Inizializza tutto al caricamento della pagina
+    updateHerbariumButtons();
+    setupHerbariumListeners();
+});
+</script>
 </body>
 </html>
