@@ -1,4 +1,5 @@
 ---
+// FILE: src/pages/index.astro
 import Airtable from 'airtable';
 
 // 1. CONFIGURAZIONE AIRTABLE
@@ -6,36 +7,24 @@ const base = new Airtable({
   apiKey: import.meta.env.PUBLIC_AIRTABLE_API_KEY
 }).base(import.meta.env.PUBLIC_AIRTABLE_BASE_ID);
 
-// 2. RECUPERO DATI - AGGIORNATO CON TUTTI I DETTAGLI
+// 2. RECUPERO DATI
 let items = [];
 try {
   const records = await base(import.meta.env.PUBLIC_AIRTABLE_TABLE_NAME)
-    .select({ maxRecords: 100, sort: [{field: "Name", direction: "asc"}] })
+    .select({ 
+        maxRecords: 50,
+        sort: [{field: "Name", direction: "asc"}] 
+    })
     .all();
  
   items = records.map(record => ({
     id: record.id,
     nome: record.fields.Name || 'N/D',
-    scientific: record.fields.Scientific || 'N/D',
-    famiglia: record.fields.Famiglia || 'N/D',
-    categoria: record.fields.Category || 'Senza Categoria',
     image: record.fields.Photo?.[0]?.thumbnails?.large?.url || record.fields.Photo?.[0]?.url,
-    lat: record.fields.Latitude || null,
-    lng: record.fields.Longitude || null,
-    // Dati per il pannello espandibile
-    description: record.fields.Description || 'Nessuna descrizione disponibile.',
-    divisione: record.fields.Divisione || null,
-    classe: record.fields.Classe || null,
-    sottoclasse: record.fields.Sottoclasse || null,
-    tribù: record.fields.Tribù || null,
   }));
 } catch (error) {
   console.error('Errore caricamento dati:', error);
 }
-
-// 3. DATI PER IL MARQUEE
-const uniqueFamilies = [...new Set(items.map(item => item.famiglia).filter(Boolean))];
-const marqueeText = uniqueFamilies.slice(0, 10).join(' • ') + ' • ';
 
 const titolo = "URBINO BOTANICAL GARDEN";
 ---
@@ -46,394 +35,127 @@ const titolo = "URBINO BOTANICAL GARDEN";
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>{titolo}</title>
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <title>{titolo} - Home</title>
 
 <style>
+  /* --- IMPOSTAZIONI GENERALI E TEMA --- */
   :root {
-    --bg-color: #ffffff; --text-color: #111111; --subtle-text-color: #666666;
-    --border-color: #eaeaea; --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --bg-color: #ffffff;
+    --text-color: #111111;
+    --subtle-text-color: #000000;
+    --border-color: #eaeaea;
+    --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
+  
   html.dark {
-    --bg-color: #111111; --text-color: #eaeaea; --subtle-text-color: #999999; --border-color: #333333;
+    --bg-color: #111111;
+    --text-color: #eaeaea;
+    --subtle-text-color: #000000;
+    --border-color: #333333;
   }
-  body { font-family: var(--font-main); background-color: var(--bg-color); color: var(--text-color); margin: 0; transition: background-color 0.3s ease, color 0.3s ease;}
 
-  .site-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background-color: var(--bg-color); z-index: 10; }
-  .header-content { max-width: 1400px; width: 100%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
-  .site-title { font-weight: 600; font-size: 1rem; margin: 0; }
-  .site-nav { display: flex; align-items: center; gap: 0.5rem; }
-  #search-input, #theme-toggle { background: none; border: 1px solid var(--border-color); border-radius: 99px; color: var(--text-color); padding: 0.4rem 0.8rem; font-size: 0.9rem; cursor: pointer; }
-  .marquee-container { width: 100%; overflow: hidden; padding: 1rem 0; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background-color 0.3s ease; }
-  .marquee-container:hover { background-color: var(--text-color); }
-  .marquee-container:hover .marquee-text { color: var(--bg-color); }
-  .marquee-text { font-size: 10rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; display: inline-block; transition: color 0.3s ease; animation: scroll-right-to-left 75s linear infinite; }
-  @keyframes scroll-right-to-left { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
-  .main-content { max-width: 1400px; width: 100%; margin: 0 auto; padding: 1.5rem; box-sizing: border-box; }
-  .view-switcher { display: flex; border: 1px solid var(--border-color); }
-  .view-button {
-    flex: 1; text-align: center; background: none; border: none;
-    color: var(--subtle-text-color); padding: 1rem 0; cursor: pointer;
-    font-size: 0.9rem; font-weight: 500; text-transform: uppercase;
-    transition: all 0.2s ease;
+  body {
+    font-family: var(--font-main);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
   }
-  .view-button:hover { background-color: var(--border-color); }
-  .view-button.active { background-color: var(--text-color); color: var(--bg-color); cursor: default; }
-  .view-button.active:hover { background-color: var(--text-color); }
-  .view-button + .view-button { border-left: 1px solid var(--border-color); }
-  .view-container { display: none; padding-top: 2rem; }
-  .view-container.active { display: block; }
-  .message { text-align: center; padding: 4rem 1rem; color: var(--subtle-text-color); }
 
-  /* --- MODIFICHE CHIAVE PER L'ESPANSIONE VERTICALE --- */
-
-  .grid {
+  /* --- GRIGLIA DI IMMAGINI DI SFONDO --- */
+  .landing-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1rem;
-    align-items: start; /* Allinea le card all'inizio della loro cella */
-  }
-  
-  .card {
-    border: 1px solid var(--border-color);
-    position: relative;
-    cursor: pointer;
-    overflow: hidden;
-    /* Animazione più lenta */
-    transition: max-height 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 3rem;
+    padding: 1rem;
+    /* Rimuoviamo l'allineamento specifico per lasciare che i riquadri si allunghino */
+    /* align-items: end; */
   }
 
-  .card-main-content { }
-
-  .card img {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    object-fit: cover;
-    display: block;
-    background-color: var(--border-color);
-  }
-
-  .card-content { padding: 0.75rem; }
-  .card-content h3 { font-size: 1rem; margin: 0 0 0.2rem 0; }
-  .card-content p { font-size: 0.9rem; margin: 0; color: var(--subtle-text-color); }
-
-  .card-details-panel {
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    padding: 0 1rem;
-    box-sizing: border-box;
-    /* Animazione più lenta */
-    transition: max-height 0.8s ease-in-out, opacity 0.6s ease-in, padding 0.8s ease-in-out;
-  }
-  .card-details-panel p {
-    font-size: 0.9rem;
-    line-height: 1.5;
-    margin-bottom: 1.5rem;
-  }
-  .taxonomy-list {
-    border-top: 1px solid var(--border-color);
-    padding-top: 0.5rem;
-    font-size: 0.85rem;
-  }
-  .taxonomy-item {
+  /* --- STILE DEI SINGOLI ELEMENTI DELLA GRIGLIA --- */
+  .grid-item {
+    /* MODIFICA: Usiamo Flexbox per controllare l'allineamento interno */
     display: flex;
-    justify-content: space-between;
-    padding: 0.4rem 0;
+    flex-direction: column;
   }
-  .taxonomy-item span:last-child { color: var(--subtle-text-color); }
 
-  /* Stato ESPANSO della card (solo verticale) */
-  .card.expanded {
-    /* NON occupa più tutta la larghezza. Rimane nella sua colonna. */
-    cursor: default;
-    max-height: 2000px; /* Valore grande per permettere l'espansione verticale */
+  /* NUOVO: Contenitore per l'immagine che si espande e centra */
+  .image-container {
+    flex-grow: 1; /* Occupa tutto lo spazio verticale disponibile */
+    display: flex;
+    align-items: center; /* Centra l'immagine verticalmente al suo interno */
+  }
+
+  .grid-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .item-name {
+    display: block;
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--subtle-text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* --- CONTENUTO CENTRALE (TITOLO E BOTTONE) --- */
+  .center-content {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    text-align: center;
+    pointer-events: none;
   }
   
-  .card.expanded .card-details-panel {
-    max-height: 1000px;
-    opacity: 1;
-    padding: 0 1rem 1.5rem 1rem;
-    /* Aggiungo un ritardo all'opacità per un effetto migliore */
-    transition: max-height 1s ease-in-out, opacity 0.7s 0.3s ease-in, padding 1s ease-in-out;
+  .main-title {
+    font-size: 1rem; 
+    font-weight: 500;
+    margin: 0;
+    color: var(--text-color);
   }
 
-  .herbarium-btn {
-    position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(255, 255, 255, 0.7);
-    border-radius: 50%; border: none; cursor: pointer; width: 30px; height: 30px;
-    font-size: 1.5rem; line-height: 28px; text-align: center; color: #111;
-    opacity: 0; transition: all 0.2s ease; z-index: 5;
+  .explore-button {
+    pointer-events: all;
+    margin-top: 0.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    color: var(--text-color);
+    opacity: 0.7;
+    transition: all 0.3s ease;
   }
-  html.dark .herbarium-btn { background: rgba(0,0,0,0.5); color: #fff; }
-  .card:hover .herbarium-btn { opacity: 1; }
-  .herbarium-btn.active { background: var(--text-color); color: var(--bg-color); opacity: 1; transform: rotate(45deg); }
-  
-  .archive-table { width: 100%; border-collapse: collapse; }
-  .archive-table th, .archive-table td { text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
-  .archive-table th { font-weight: 600; text-transform: uppercase; font-size: 0.8rem; }
-  .archive-table tr { transition: background-color 0.2s ease; }
-  .archive-table tr:hover { background-color: var(--border-color); }
-  .archive-table td img { width: 40px; height: 40px; object-fit: cover; vertical-align: middle; margin-right: 1rem; background-color: var(--border-color); }
 
-  #map { height: 70vh; border: 1px solid var(--border-color); background-color: var(--border-color); }
-  .map-note { font-size: 0.8rem; color: var(--subtle-text-color); text-align: center; margin-top: 1rem; }
+  .explore-button:hover {
+    opacity: 3;
+    
+  }
 </style>
 </head>
 <body>
-
-    <header class="site-header">
-        <div class="header-content">
-            <h1 class="site-title">{titolo}</h1>
-            <nav class="site-nav">
-                <input type="search" id="search-input" placeholder="Cerca per nome...">
-                <button id="theme-toggle" title="Cambia tema">🌓</button>
-            </nav>
-        </div>
-    </header>
-
-    <div class="marquee-container">
-        <div class="marquee-text">{marqueeText.repeat(5)}</div>
+    <div class="landing-grid">
+        {items.map(item => (
+            <div class="grid-item">
+                <div class="image-container">
+                    <img src={item.image || 'https://via.placeholder.com/200'} alt={item.nome} loading="lazy" />
+                </div>
+                <span class="item-name">{item.nome}</span>
+            </div>
+        ))}
     </div>
 
-    <main class="main-content">
-        <div class="view-switcher">
-            <button class="view-button active" data-view="grid-view">Griglia</button>
-            <button class="view-button" data-view="archive-view">Archivio</button>
-            <button class="view-button" data-view="map-view">Mappa</button>
-            <button class="view-button" data-view="herbarium-view">Il tuo erbario</button>
-        </div>
-
-        <div id="grid-view" class="view-container active">
-            <div class="grid">
-                {items.map(item => (
-                    <article class="card item-container" data-id={item.id} data-search-terms={`${item.nome.toLowerCase()} ${item.scientific.toLowerCase()}`}>
-                        
-                        <div class="card-main-content">
-                            <img src={item.image || 'https://via.placeholder.com/300'} alt={`Foto di ${item.nome}`} loading="lazy" />
-                            <div class="card-content">
-                                <h3>{item.nome}</h3>
-                                <p>{item.scientific}</p>
-                            </div>
-                        </div>
-
-                        <div class="card-details-panel">
-                            <p>{item.description}</p>
-                            <div class="taxonomy-list">
-                                {item.divisione && <div class="taxonomy-item"><span>Divisione</span> <span>{item.divisione}</span></div>}
-                                {item.classe && <div class="taxonomy-item"><span>Classe</span> <span>{item.classe}</span></div>}
-                                {item.sottoclasse && <div class="taxonomy-item"><span>Sottoclasse</span> <span>{item.sottoclasse}</span></div>}
-                                {item.famiglia && <div class="taxonomy-item"><span>Famiglia</span> <span>{item.famiglia}</span></div>}
-                                {item.tribù && <div class="taxonomy-item"><span>Tribù</span> <span>{item.tribù}</span></div>}
-                            </div>
-                        </div>
-
-                        <button class="herbarium-btn" title="Aggiungi all'erbario">+</button>
-                    </article>
-                ))}
-            </div>
-        </div>
-
-        <div id="archive-view" class="view-container">
-            <table class="archive-table">
-                <thead>
-                    <tr>
-                        <th colspan="2">Nome Comune</th>
-                        <th>Nome Scientifico</th>
-                        <th>Famiglia</th>
-                        <th>Categoria</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {items.map(item => (
-                        <tr class="item-container" data-id={item.id} data-search-terms={`${item.nome.toLowerCase()} ${item.scientific.toLowerCase()}`}>
-                            <td><img src={item.image || 'https://via.placeholder.com/40'} alt={`Foto di ${item.nome}`} loading="lazy"/></td>
-                            <td>{item.nome}</td>
-                            <td>{item.scientific}</td>
-                            <td>{item.famiglia}</td>
-                            <td>{item.categoria}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-
-        <div id="map-view" class="view-container">
-            <div id="map"></div>
-            <p class="map-note">Mostra le piante su una mappa. Assicurati di avere colonne "Latitude" e "Longitude" nel tuo Airtable.</p>
-        </div>
-
-        <div id="herbarium-view" class="view-container">
-             <div class="grid" id="herbarium-grid">
-                </div>
-             <p id="no-herbarium-message" class="message" style="display: none;">
-                Il tuo erbario è vuoto. Clicca sul '+' nelle schede delle piante per aggiungerle.
-            </p>
-        </div>
-
-        <p id="no-results-message" class="message" style="display: none;">Nessun risultato trovato per la tua ricerca.</p>
-
-    </main>
-
-<script define:vars={{ items }}>
-// NESSUNA MODIFICA ALLO SCRIPT. È IDENTICO ALLA VERSIONE PRECEDENTE.
-document.addEventListener('DOMContentLoaded', () => {
-
-    // --- 1. GESTIONE TEMA (DARK/LIGHT) ---
-    const themeToggle = document.getElementById('theme-toggle');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-    const applyTheme = (theme) => {
-        document.documentElement.classList.toggle('dark', theme === 'dark');
-        localStorage.setItem('theme', theme);
-    };
-    applyTheme(localStorage.getItem('theme') || (prefersDark.matches ? 'dark' : 'light'));
-    themeToggle.addEventListener('click', () => {
-        const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
-        applyTheme(newTheme);
-    });
-
-    // --- 2. GESTIONE CAMBIO VISUALIZZAZIONE ---
-    const viewButtons = document.querySelectorAll('.view-button');
-    const viewContainers = document.querySelectorAll('.view-container');
-    let mapInitialized = false;
-    viewButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const targetViewId = button.dataset.view;
-            viewButtons.forEach(btn => btn.classList.toggle('active', btn === button));
-            viewContainers.forEach(container => {
-                container.classList.toggle('active', container.id === targetViewId);
-            });
-            if (targetViewId === 'map-view' && !mapInitialized) {
-                initMap();
-                mapInitialized = true;
-            }
-            if (targetViewId === 'herbarium-view') {
-                renderHerbarium();
-            }
-        });
-    });
-
-    // --- 3. GESTIONE RICERCA ---
-    const searchInput = document.getElementById('search-input');
-    const allItems = document.querySelectorAll('.item-container');
-    const noResultsMessage = document.getElementById('no-results-message');
-    searchInput.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase().trim();
-        let visibleCount = 0;
-        allItems.forEach(item => {
-            const itemTerms = item.dataset.searchTerms;
-            const isVisible = itemTerms.includes(searchTerm);
-            item.style.display = isVisible ? '' : 'none';
-            if(isVisible) visibleCount++;
-        });
-        noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
-    });
-
-    // --- 4. GESTIONE ERBARIO (FAVORITI) ---
-    const herbariumGrid = document.getElementById('herbarium-grid');
-    const noHerbariumMessage = document.getElementById('no-herbarium-message');
-    let herbariumIds = JSON.parse(localStorage.getItem('herbarium')) || [];
-    const saveHerbarium = () => {
-        localStorage.setItem('herbarium', JSON.stringify(herbariumIds));
-    };
-    const updateHerbariumButtons = () => {
-        document.querySelectorAll('.herbarium-btn').forEach(btn => {
-            const cardId = btn.closest('.item-container').dataset.id;
-            btn.classList.toggle('active', herbariumIds.includes(cardId));
-        });
-    };
-    const renderHerbarium = () => {
-        herbariumGrid.innerHTML = '';
-        const favoriteItems = items.filter(item => herbariumIds.includes(item.id));
-        if (favoriteItems.length > 0) {
-            favoriteItems.forEach(item => {
-                const originalCard = document.querySelector(`.card[data-id="${item.id}"]`);
-                if (originalCard) {
-                    herbariumGrid.appendChild(originalCard.cloneNode(true));
-                }
-            });
-            noHerbariumMessage.style.display = 'none';
-        } else {
-            noHerbariumMessage.style.display = 'block';
-        }
-        updateHerbariumButtons();
-    };
-    
-    // --- 5. GESTIONE ESPANSIONE CARD NELLA GRIGLIA ---
-    const grid = document.querySelector('#grid-view .grid');
-    if (grid) {
-        grid.addEventListener('click', (e) => {
-            if (e.target.closest('.herbarium-btn')) {
-                return;
-            }
-            const clickedCard = e.target.closest('.card');
-            if (!clickedCard) return;
-
-            const currentlyExpanded = grid.querySelector('.card.expanded');
-
-            if (currentlyExpanded && currentlyExpanded !== clickedCard) {
-                currentlyExpanded.classList.remove('expanded');
-            }
-
-            clickedCard.classList.toggle('expanded');
-
-            if (clickedCard.classList.contains('expanded')) {
-                setTimeout(() => {
-                    clickedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 150);
-            }
-        });
-    }
-    
-    // --- 6. INIZIALIZZAZIONE GLOBALE E LISTENER ERBARIO ---
-    const setupHerbariumListeners = () => {
-        document.body.addEventListener('click', e => {
-            if (e.target.matches('.herbarium-btn')) {
-                e.stopPropagation();
-                const card = e.target.closest('.item-container');
-                const cardId = card.dataset.id;
-                if (herbariumIds.includes(cardId)) {
-                    herbariumIds = herbariumIds.filter(id => id !== cardId);
-                } else {
-                    herbariumIds.push(cardId);
-                }
-                saveHerbarium();
-                updateHerbariumButtons();
-                if(document.getElementById('herbarium-view').classList.contains('active')) {
-                    renderHerbarium();
-                }
-            }
-        });
-    };
-
-    function initMap() {
-        if (typeof L === 'undefined') {
-            console.error('Libreria Leaflet non trovata.');
-            return;
-        }
-        const itemsWithCoords = items.filter(item => item.lat && item.lng);
-        let centerLat = 43.715;
-        let centerLng = 12.636;
-        let defaultZoom = 13;
-
-        if (itemsWithCoords.length > 0) {
-            centerLat = itemsWithCoords.reduce((sum, item) => sum + item.lat, 0) / itemsWithCoords.length;
-            centerLng = itemsWithCoords.reduce((sum, item) => sum + item.lng, 0) / itemsWithCoords.length;
-        }
-        const map = L.map('map').setView([centerLat, centerLng], defaultZoom);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
-        itemsWithCoords.forEach(item => {
-            const popupContent = `<b>${item.nome}</b><br><i>${item.scientific}</i>`;
-            L.marker([item.lat, item.lng]).addTo(map).bindPopup(popupContent);
-        });
-    }
-
-    updateHerbariumButtons();
-    setupHerbariumListeners();
-});
-</script>
+    <div class="center-content">
+        <h1 class="main-title">{titolo}</h1>
+        <a href="/archivio" class="explore-button">ESPLORA</a>
+    </div>
 </body>
 </html>
