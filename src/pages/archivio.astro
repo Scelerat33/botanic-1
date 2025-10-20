@@ -1,47 +1,75 @@
 ---
-// FILE: src/pages/archivio.astro
 import Airtable from 'airtable';
 
-// 1. CONFIGURAZIONE AIRTABLE
-const base = new Airtable({
-  apiKey: import.meta.env.PUBLIC_AIRTABLE_API_KEY
-}).base(import.meta.env.PUBLIC_AIRTABLE_BASE_ID);
+// --- 1. DIAGNOSTICA E CARICAMENTO VARIABILI D'AMBIENTE ---
+console.log("--- Inizio esecuzione script Astro ---");
 
-// 2. RECUPERO DATI - AGGIORNATO CON TUTTI I DETTAGLI
-let items = [];
-try {
-  const records = await base(import.meta.env.PUBLIC_AIRTABLE_TABLE_NAME)
-    .select({ maxRecords: 100, sort: [{field: "Name", direction: "asc"}] })
-    .all();
- 
-  items = records.map(record => ({
-    id: record.id,
-    nome: record.fields.Name || 'N/D',
-    scientific: record.fields.Scientific || 'N/D',
-    famiglia: record.fields.Famiglia || 'N/D',
-    categoria: record.fields.Category || 'Senza Categoria',
-    image: record.fields.Photo?.[0]?.thumbnails?.large?.url || record.fields.Photo?.[0]?.url,
-    lat: record.fields.Latitude || null,
-    lng: record.fields.Longitude || null,
-    description: record.fields.Description || 'Nessuna descrizione disponibile.',
-    divisione: record.fields.Divisione || null,
-    classe: record.fields.Classe || null,
-    sottoclasse: record.fields.Sottoclasse || null,
-    tribù: record.fields.Tribù || null,
-  }));
-} catch (error) {
-  console.error('Errore caricamento dati:', error);
-}
+const apiKey = import.meta.env.PUBLIC_AIRTABLE_API_KEY;
+const baseId = import.meta.env.PUBLIC_AIRTABLE_BASE_ID;
+const tableName = import.meta.env.PUBLIC_AIRTABLE_TABLE_NAME;
 
-// 3. DATI PER IL MARQUEE
-const uniqueFamilies = [...new Set(items.map(item => item.famiglia).filter(Boolean))];
-const marqueeText = uniqueFamilies.slice(0, 10).join(' • ') + ' • ';
+console.log("Chiave API Caricata:", apiKey ? `Sì, inizia con '${apiKey.substring(0, 4)}...'` : "NO, 'undefined'!");
+console.log("Base ID Caricato:", baseId ? `Sì, '${baseId}'` : "NO, 'undefined'!");
+console.log("Nome Tabella Caricato:", tableName ? `Sì, '${tableName}'` : "NO, 'undefined'!");
 
 const titolo = "URBINO BOTANICAL GARDEN";
+let items = [];
+let marqueeText = ' • '; // Valore di default per il marquee
+
+// Controlla che le variabili esistano prima di tentare la connessione
+if (apiKey && baseId && tableName) {
+    try {
+        const base = new Airtable({ apiKey }).base(baseId);
+        console.log("Connessione ad Airtable in corso...");
+
+        const records = await base(tableName)
+            .select({ maxRecords: 300 })
+            .all();
+        
+        console.log(`[SUCCESSO] Recuperati ${records.length} record da Airtable.`);
+
+        if (records.length > 0) {
+            console.log("STRUTTURA DEL PRIMO RECORD (controlla i nomi dei campi qui):", records[0].fields);
+        }
+
+        // USO LA TUA MAPPATURA DETTAGLIATA DEI DATI CON I VALORI DI DEFAULT
+        items = records.map(record => ({
+            id: record.id,
+            nome: record.fields.Name || 'N/D',
+            scientific: record.fields.Scientific || 'N/D',
+            famiglia: record.fields.Famiglia || 'N/D',
+            categoria: record.fields.Category || 'Senza Categoria',
+            image: record.fields.Photo?.[0]?.thumbnails?.large?.url || record.fields.Photo?.[0]?.url,
+            lat: record.fields.Latitude || null,
+            lng: record.fields.Longitude || null,
+            description: record.fields.Description || 'Nessuna descrizione disponibile.',
+            divisione: record.fields.Divisione || null,
+            classe: record.fields.Classe || null,
+            sottoclasse: record.fields.Sottoclasse || null,
+            tribù: record.fields.Tribù || null,
+        }));
+
+        // GENERO I DATI PER IL MARQUEE DOPO AVER CARICATO GLI ITEMS
+        const uniqueFamilies = [...new Set(items.map(item => item.famiglia).filter(Boolean))];
+        if (uniqueFamilies.length > 0) {
+            marqueeText = uniqueFamilies.slice(0, 10).join(' • ') + ' • ';
+        }
+
+    } catch (error) {
+        console.error("\n[ERRORE GRAVE] Impossibile caricare i dati da Airtable.");
+        console.error("L'errore è probabilmente causato da una API Key, Base ID o Nome Tabella non corretti, oppure da un nome di campo errato nel 'sort'.");
+        console.error("Dettagli tecnici dell'errore:", error);
+    }
+} else {
+    console.error("\n[ERRORE] Una o più variabili d'ambiente non sono state trovate. Controlla il tuo file .env e riavvia il server.");
+}
 ---
 
 <html lang="it">
 <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
@@ -195,6 +223,127 @@ const titolo = "URBINO BOTANICAL GARDEN";
 
   #map { height: 70vh; border: 1px solid var(--border-color); background-color: var(--border-color); }
   .map-note { font-size: 0.8rem; color: var(--subtle-text-color); text-align: center; margin-top: 1rem; }
+
+  /* NUOVI STILI PER IL CONFIGURATORE POSTER */
+  .herbarium-actions {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .action-btn {
+    background-color: var(--text-color);
+    color: var(--bg-color);
+    border: 1px solid var(--text-color);
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .action-btn:hover {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+  }
+
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-content {
+    background: var(--bg-color);
+    width: 90%;
+    max-width: 1200px;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .modal-header h2 { margin: 0; font-size: 1.2rem; }
+  .close-btn {
+    background: none; border: none; font-size: 2rem;
+    cursor: pointer; color: var(--text-color);
+  }
+  .creator-body {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    flex-grow: 1;
+    overflow: hidden;
+  }
+  .poster-controls {
+    padding: 1.5rem;
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+  }
+  .control-group { margin-bottom: 1.5rem; }
+  .control-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500; }
+  .control-group select, .control-group input[type="color"] { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); }
+  .radio-group, .checkbox-group { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .poster-preview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #e0e0e0;
+    padding: 2rem;
+    overflow: auto;
+  }
+  html.dark .poster-preview { background-color: #222; }
+
+  #poster-canvas {
+    width: 100%;
+    max-width: 500px;
+    aspect-ratio: 2 / 3;
+    background-color: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    padding: 2rem;
+    box-sizing: border-box;
+    display: flex;
+    transition: all 0.3s ease;
+  }
+  #poster-canvas img { width: 100%; height: auto; object-fit: cover; }
+  #poster-canvas .poster-text { text-align: center; }
+  #poster-canvas h3 { font-size: 2rem; margin: 0.5em 0 0.2em; }
+  #poster-canvas p { font-size: 1rem; margin: 0.2em 0; }
+
+  /* Layouts */
+  #poster-canvas.layout-a {
+    flex-direction: column;
+  }
+  #poster-canvas.layout-a img {
+    flex-basis: 60%;
+    height: 60%;
+  }
+  #poster-canvas.layout-a .poster-text {
+    flex-basis: 40%;
+    padding-top: 1rem;
+  }
+
+  #poster-canvas.layout-b {
+    flex-direction: row;
+    aspect-ratio: 3 / 2;
+    gap: 1.5rem;
+    align-items: center;
+  }
+  #poster-canvas.layout-b img {
+    flex-basis: 50%;
+    width: 50%;
+    height: 100%;
+  }
+  #poster-canvas.layout-b .poster-text {
+    flex-basis: 50%;
+    text-align: left;
+  }
 </style>
 </head>
 <body>
@@ -284,8 +433,11 @@ const titolo = "URBINO BOTANICAL GARDEN";
         </div>
 
         <div id="herbarium-view" class="view-container">
+            <div class="herbarium-actions">
+                <button id="open-poster-creator-btn" class="action-btn">Crea il tuo Poster</button>
+            </div>
              <div class="grid" id="herbarium-grid">
-                </div>
+             </div>
              <p id="no-herbarium-message" class="message" style="display: none;">
                 Il tuo erbario è vuoto. Clicca sul '+' nelle schede delle piante per aggiungerle.
             </p>
@@ -294,6 +446,78 @@ const titolo = "URBINO BOTANICAL GARDEN";
         <p id="no-results-message" class="message" style="display: none;">Nessun risultato trovato per la tua ricerca.</p>
 
     </main>
+
+<div id="poster-creator-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        
+        <div class="modal-header">
+            <h2>Configuratore Poster</h2>
+            <button id="close-modal-btn" class="close-btn">&times;</button>
+        </div>
+
+        <div class="creator-body">
+            <div class="poster-controls">
+                
+                <div class="control-group">
+                    <label for="plant-select">Scegli una pianta dall'erbario:</label>
+                    <select id="plant-select"></select>
+                </div>
+
+                <div class="control-group">
+                    <label>Layout del Poster:</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="layout" value="layout-a" checked> Verticale</label>
+                        <label><input type="radio" name="layout" value="layout-b"> Orizzontale</label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Elementi da includere:</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" data-element="scientific-name" checked> Nome Scientifico</label>
+                        <label><input type="checkbox" data-element="family-name" checked> Famiglia</label>
+                        <label><input type="checkbox" data-element="description"> Descrizione</label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="bg-color">Colore Sfondo:</label>
+                    <input type="color" id="bg-color" value="#f4f4f4">
+                </div>
+                
+                <div class="control-group">
+                    <label for="text-color">Colore Testo:</label>
+                    <input type="color" id="text-color" value="#111111">
+                </div>
+                
+                <div class="control-group">
+                    <label for="font-select">Carattere:</label>
+                    <select id="font-select">
+                        <option value="serif">Serif (es. Times New Roman)</option>
+                        <option value="sans-serif" selected>Sans-Serif (es. Arial)</option>
+                        <option value="monospace">Monospace (es. Courier)</option>
+                    </select>
+                </div>
+
+                <button id="download-poster-btn" class="action-btn">Download Poster</button>
+
+            </div>
+
+            <div class="poster-preview">
+                <div id="poster-canvas" class="layout-a">
+                    <img id="poster-img" src="" alt="Anteprima pianta">
+                    <div class="poster-text">
+                        <h3 id="poster-common-name"></h3>
+                        <p id="poster-scientific-name"></p>
+                        <p id="poster-family-name"></p>
+                        <p id="poster-description"></p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 <script define:vars={{ items }}>
 document.addEventListener('DOMContentLoaded', () => {
@@ -433,7 +657,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const itemsWithCoords = items.filter(item => item.lat && item.lng);
         let centerLat = 43.715;
         let centerLng = 12.636;
-        let defaultZoom = 13;
+        let defaultZoom = 15;
 
         if (itemsWithCoords.length > 0) {
             centerLat = itemsWithCoords.reduce((sum, item) => sum + item.lat, 0) / itemsWithCoords.length;
@@ -449,9 +673,128 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- 7. NUOVO: GESTIONE CONFIGURATORE POSTER ---
+    const posterModal = document.getElementById('poster-creator-modal');
+    const openBtn = document.getElementById('open-poster-creator-btn');
+    const closeBtn = document.getElementById('close-modal-btn');
+    const downloadBtn = document.getElementById('download-poster-btn');
+
+    const plantSelect = document.getElementById('plant-select');
+    const layoutRadios = document.querySelectorAll('input[name="layout"]');
+    const contentCheckboxes = document.querySelectorAll('.checkbox-group input');
+    const bgColorInput = document.getElementById('bg-color');
+    const textColorInput = document.getElementById('text-color');
+    const fontSelect = document.getElementById('font-select');
+
+    const posterCanvas = document.getElementById('poster-canvas');
+    const posterImg = document.getElementById('poster-img');
+    const posterCommonName = document.getElementById('poster-common-name');
+    const posterScientificName = document.getElementById('poster-scientific-name');
+    const posterFamilyName = document.getElementById('poster-family-name');
+    const posterDescription = document.getElementById('poster-description');
+
+    function populatePlantSelector() {
+        plantSelect.innerHTML = '';
+        const favoriteItems = items.filter(item => herbariumIds.includes(item.id));
+
+        if (favoriteItems.length === 0) {
+            const option = document.createElement('option');
+            option.textContent = 'Aggiungi piante all\'erbario prima!';
+            option.disabled = true;
+            plantSelect.appendChild(option);
+            downloadBtn.disabled = true;
+            return;
+        }
+        
+        downloadBtn.disabled = false;
+        favoriteItems.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.textContent = item.nome;
+            plantSelect.appendChild(option);
+        });
+    }
+
+    function updatePreview() {
+        const selectedId = plantSelect.value;
+        if (!selectedId) return;
+
+        const plantData = items.find(item => item.id === selectedId);
+        if (!plantData) return;
+        
+        // 1. Aggiorna Contenuti
+        posterImg.src = plantData.image || 'https://via.placeholder.com/400';
+        posterCommonName.textContent = plantData.nome;
+        posterScientificName.textContent = plantData.scientific;
+        posterFamilyName.textContent = `Fam. ${plantData.famiglia}`;
+        posterDescription.textContent = plantData.description;
+
+        // 2. Aggiorna Visibilità Elementi
+        contentCheckboxes.forEach(cb => {
+            const elementId = `poster-${cb.dataset.element}`;
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.style.display = cb.checked ? 'block' : 'none';
+            }
+        });
+
+        // 3. Aggiorna Stili
+        posterCanvas.style.backgroundColor = bgColorInput.value;
+        posterCanvas.style.color = textColorInput.value;
+        posterCanvas.style.fontFamily = fontSelect.value;
+
+        // 4. Aggiorna Layout
+        const selectedLayout = document.querySelector('input[name="layout"]:checked').value;
+        posterCanvas.className = ''; // Rimuove tutte le classi
+        posterCanvas.classList.add(selectedLayout);
+    }
+
+    // Event Listeners per il modal
+    if (openBtn) {
+        openBtn.addEventListener('click', () => {
+            populatePlantSelector();
+            updatePreview();
+            posterModal.style.display = 'flex';
+        });
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            posterModal.style.display = 'none';
+        });
+    }
+
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', () => {
+            downloadBtn.textContent = '⏳ Sto creando...';
+            // html2canvas ha bisogno che le immagini siano caricate dal server in modo "CORS-friendly". 
+            // Le immagini da Airtable di solito funzionano bene.
+            html2canvas(posterCanvas, { useCORS: true, allowTaint: true }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `poster-${plantSelect.options[plantSelect.selectedIndex].text.toLowerCase().replace(/ /g, '_')}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                downloadBtn.textContent = '🖼️ Scarica Poster';
+            }).catch(err => {
+                console.error("Errore con html2canvas:", err);
+                alert("Errore durante la creazione del poster. Controlla la console per i dettagli.");
+                downloadBtn.textContent = '🖼️ Scarica Poster';
+            });
+        });
+    }
+
+    // Aggiorna l'anteprima quando un controllo cambia
+    const allControls = [plantSelect, bgColorInput, textColorInput, fontSelect, ...layoutRadios, ...contentCheckboxes];
+    allControls.forEach(control => {
+        control.addEventListener('change', updatePreview);
+        control.addEventListener('input', updatePreview); // Per i color picker
+    });
+
+    // --- Chiamate iniziali ---
     updateHerbariumButtons();
     setupHerbariumListeners();
 });
 </script>
+
 </body>
 </html>
