@@ -2,7 +2,6 @@
 // src/pages/scanner.astro
 import MobileLayout from '../layouts/MobileLayout.astro';
 
-// ... (const plant = {...} - i tuoi dati)
 const plant = {
     name: "Papiro Egiziano", image: "/papiro-egiziano.jpg",
     family: "Cyperus papyrus", class: "Liliopsida", subclass: "Commelinidae",
@@ -22,20 +21,25 @@ const plant = {
     </main>
 
     <div id="plant-overlay" class="plant-card-overlay" slot="overlay">
+        
         <div class="plant-card">
-            <button id="close-btn" class="close-btn">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
+            
+            <div id="drag-handle" class="drag-handle">
+                <span class="drag-handle-bar"></span>
+            </div>
+
             <div class="card-content">
                 <div class="image-container">
                     <img src={plant.image} alt={plant.name} />
+                    </div>
+
+                <div class="title-header">
+                    <h2>{plant.name}</h2>
                     <button id="add-to-collection-btn" class="icon-btn plus-icon">
                         <svg class="icon-plus" viewBox="0 0 24 24"><path d="M12 5V19M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         <svg class="icon-check" viewBox="0 0 24 24"><path d="M20 6L9 17L4 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
-                    <button class="icon-btn diamond-icon">✦</button>
                 </div>
-                <h2>{plant.name}</h2>
 
                 <div class="swipe-container">
                     <div class="swipe-wrapper">
@@ -55,148 +59,295 @@ const plant = {
                     </div>
                 </div>
 
-                <div class="pagination">
-                    <span class="dot active" data-index="0"></span>
-                    <span class="dot" data-index="1"></span>
+                <div class="card-footer">
+                    <div class="pagination-container">
+                        <span class="dot active" data-index="0"></span>
+                        <span class="dot" data-index="1"></span>
+                    </div>
+                    <a href="/collection" class="collection-link">YOUR COLLECTION (0)</a>
                 </div>
+
             </div>
         </div>
     </div>
 </MobileLayout>
 
 <script>
-    // ... (il tuo SCRIPT è corretto, lascialo com'è) ...
     document.addEventListener('DOMContentLoaded', () => {
         const scanBtn = document.getElementById('scan-btn');
         const overlay = document.getElementById('plant-overlay');
-        const closeBtn = document.getElementById('close-btn');
         const addBtn = document.getElementById('add-to-collection-btn');
-
+        
+        // Eventi per aprire e aggiungere
         scanBtn.addEventListener('click', () => { overlay.classList.add('is-visible'); });
-        closeBtn.addEventListener('click', () => { overlay.classList.remove('is-visible'); });
         addBtn.addEventListener('click', () => { addBtn.classList.toggle('is-added'); });
 
-        // --- LOGICA SWIPE ---
+        // --- LOGICA SWIPE ORIZZONTALE (Contenuto) ---
+        // (Questa logica è invariata e funziona)
         const swipeContainer = overlay.querySelector('.swipe-container');
         const swipeWrapper = overlay.querySelector('.swipe-wrapper');
         const pages = overlay.querySelectorAll('.swipe-page');
-        const dots = overlay.querySelectorAll('.pagination .dot');
+        const dots = overlay.querySelectorAll('.pagination-container .dot');
         const pageCount = pages.length;
 
         let currentPage = 0;
         let startX = 0;
-        let isDragging = false;
-
-        function updateSlider() {
+        let isContentDragging = false;
+        
+        function updateSlider() { /* ... (funzione invariata) ... */ 
             swipeWrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)'; 
             swipeWrapper.style.transform = `translateX(-${currentPage * 100}%)`;
-            dots.forEach((dot, index) => {
-                dot.classList.toggle('active', index === currentPage);
-            });
+            dots.forEach((dot, index) => { dot.classList.toggle('active', index === currentPage); });
         }
-
-        function handleStart(clientX) {
-            isDragging = true;
-            startX = clientX;
-            swipeWrapper.style.transition = 'none'; 
+        function handleContentStart(clientX) { /* ... (funzione invariata) ... */ 
+            isContentDragging = true; startX = clientX; swipeWrapper.style.transition = 'none'; 
         }
-
-        function handleMove(clientX) {
-            if (!isDragging) return;
+        function handleContentMove(clientX) { /* ... (funzione invariata) ... */ 
+            if (!isContentDragging) return;
             const diffX = clientX - startX;
             const baseTranslate = -currentPage * swipeContainer.offsetWidth;
             swipeWrapper.style.transform = `translateX(${baseTranslate + diffX}px)`;
         }
-
-        function handleEnd(clientX) {
-            if (!isDragging) return;
-            isDragging = false;
+        function handleContentEnd(clientX) { /* ... (funzione invariata) ... */ 
+            if (!isContentDragging) return; isContentDragging = false;
             const diffX = clientX - startX;
             const threshold = swipeContainer.offsetWidth / 4; 
-
             if (Math.abs(diffX) > threshold) {
-                if (diffX < 0 && currentPage < pageCount - 1) {
-                    currentPage++;
-                } else if (diffX > 0 && currentPage > 0) {
-                    currentPage--;
-                }
+                if (diffX < 0 && currentPage < pageCount - 1) { currentPage++; }
+                else if (diffX > 0 && currentPage > 0) { currentPage--; }
             }
             updateSlider(); 
         }
-        swipeContainer.addEventListener('touchstart', (e) => handleStart(e.touches[0].clientX), { passive: true });
-        swipeContainer.addEventListener('touchmove', (e) => handleMove(e.touches[0].clientX), { passive: true });
-        swipeContainer.addEventListener('touchend', (e) => handleEnd(e.changedTouches[0].clientX));
-        swipeContainer.addEventListener('mousedown', (e) => handleStart(e.clientX));
-        swipeContainer.addEventListener('mousemove', (e) => handleMove(e.clientX));
-        swipeContainer.addEventListener('mouseup', (e) => handleEnd(e.clientX));
-        swipeContainer.addEventListener('mouseleave', () => { if (isDragging) handleEnd(startX); });
-
+        // Listener per lo swipe orizzontale
+        swipeContainer.addEventListener('touchstart', (e) => handleContentStart(e.touches[0].clientX), { passive: true });
+        swipeContainer.addEventListener('touchmove', (e) => handleContentMove(e.touches[0].clientX), { passive: true });
+        swipeContainer.addEventListener('touchend', (e) => handleContentEnd(e.changedTouches[0].clientX));
+        swipeContainer.addEventListener('mousedown', (e) => handleContentStart(e.clientX));
+        swipeContainer.addEventListener('mousemove', (e) => handleContentMove(e.clientX));
+        swipeContainer.addEventListener('mouseup', (e) => handleContentEnd(e.clientX));
+        swipeContainer.addEventListener('mouseleave', () => { if (isContentDragging) handleContentEnd(startX); });
         updateSlider();
+
+        // --- NUOVA LOGICA: DRAG-TO-CLOSE (Verticale) ---
+        const dragHandle = document.getElementById('drag-handle');
+        const plantCard = overlay.querySelector('.plant-card');
+        
+        let dragStartY = 0;
+        let isCardDragging = false;
+
+        function handleCardDragStart(e) {
+            // Non iniziare il trascinamento se si sta già scrollando il contenuto
+            if (isContentDragging) return; 
+            e.preventDefault(); // Fondamentale per il move
+            isCardDragging = true;
+            dragStartY = e.touches ? e.touches[0].clientY : e.clientY;
+            // Disabilita la transizione CSS per seguire il dito
+            overlay.style.transition = 'none'; 
+        }
+
+        function handleCardDragMove(e) {
+            if (!isCardDragging) return;
+            e.preventDefault();
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            let diffY = clientY - dragStartY;
+            
+            // Permetti di trascinare solo verso il basso
+            if (diffY < 0) diffY = 0; 
+
+            // Applica la trasformazione in tempo reale
+            overlay.style.transform = `translateY(${diffY}px)`;
+        }
+
+        function handleCardDragEnd(e) {
+            if (!isCardDragging) return;
+            isCardDragging = false;
+            
+            const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+            const diffY = clientY - dragStartY;
+            // Soglia: chiudi se trascinato per più di 1/3 dell'altezza
+            const threshold = plantCard.offsetHeight * 0.33; 
+
+            // Riattiva la transizione CSS per l'animazione
+            overlay.style.transition = ''; 
+
+            if (diffY > threshold) {
+                // Chiudi (l'animazione a 100% è gestita dalla classe CSS)
+                overlay.classList.remove('is-visible');
+            } else {
+                // Ritorna su (snap-back)
+                overlay.style.transform = 'translateY(0%)';
+            }
+            
+            // Pulisci lo stile inline dopo l'animazione
+            setTimeout(() => {
+                overlay.style.transform = '';
+            }, 500); // 500ms è la durata della transizione
+        }
+
+        // Aggiungi listener alla MANIGLIA
+        dragHandle.addEventListener('touchstart', handleCardDragStart, { passive: false });
+        dragHandle.addEventListener('mousedown', handleCardDragStart);
+        
+        // Aggiungi listener al DOCUMENT per seguire il dito/mouse
+        document.addEventListener('touchmove', handleCardDragMove, { passive: false });
+        document.addEventListener('mousemove', handleCardDragMove);
+        
+        document.addEventListener('touchend', handleCardDragEnd);
+        document.addEventListener('mouseup', handleCardDragEnd);
+        document.addEventListener('mouseleave', handleCardDragEnd); // Se esce dallo schermo
     });
 </script>
 
 <style>
-    /* I tuoi STILI sono corretti.
-      L'animazione è qui:
-    */
-    .plant-card-overlay { 
-      position: absolute; /* 'absolute' o 'fixed' funzionano */
-      inset: 0; 
-      z-index: 200; 
-      display: flex; 
-      justify-content: center; 
-      align-items: flex-end; 
-      background-color: rgba(0, 0, 0, 0.3); 
-      opacity: 0; 
-      pointer-events: none; 
-      transform: translateY(100%); /* << PARTE DA SOTTO */
-      transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.5s ease; 
-    }
-    .plant-card-overlay.is-visible { 
-      opacity: 1; 
-      pointer-events: auto; 
-      transform: translateY(0%); /* << ARRIVA AL CENTRO */
-    }
-
-    /* Assicurati che .main-content-camera sia alto 100% */
-    .main-content-camera { 
-        height: 100%; 
-        background-image: url('/greenhouse-bg.jpg'); 
-        background-size: cover; 
-        background-position: center; 
-    }
-    
-    /* Tutti gli altri stili (invariati) */
+    /* Stili Pagina Fotocamera (invariati) */
+    .main-content-camera { height: 100%; background-image: url('/greenhouse-bg.jpg'); background-size: cover; background-position: center; }
     .camera-overlay-content { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem; box-sizing: border-box; background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(3px); }
     .camera-overlay-content p { font-size: 1.3rem; font-weight: 500; margin-bottom: 2rem; line-height: 1.4; max-width: 300px; text-align: center; color: white; }
     .scan-target-icon { background: none; border: none; padding: 0; cursor: pointer; }
     .scan-target-icon svg { width: 80px; height: 80px; stroke: white; stroke-width: 3px; }
 
-    .plant-card { width: 100%; max-width: 390px; max-height: 90%; background-color: white; border-radius: 30px 30px 0 0; position: relative; display: flex; flex-direction: column; overflow: hidden; }
-    .close-btn { position: absolute; top: 0.5rem; left: 50%; transform: translateX(-50%); background-color: #e0e0e0; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; }
-    .card-content { padding: 2.5rem 1.5rem 1.5rem 1.5rem; flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
-    .image-container { position: relative; border-radius: 20px; overflow: hidden; margin-top: 1rem; flex-shrink: 0; }
+    /* --- STILI CARD MODIFICATI ---
+    */
+
+    /* Overlay (contenitore animato) - invariato */
+    .plant-card-overlay { 
+        position: absolute; 
+        inset: 0; 
+        z-index: 200; 
+        /* Rimosso display:flex, non più necessario */
+        background-color: rgba(0, 0, 0, 0.3); 
+        opacity: 0; 
+        pointer-events: none; 
+        transform: translateY(100%); 
+        transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.5s ease; 
+    }
+    .plant-card-overlay.is-visible { 
+        opacity: 1; 
+        pointer-events: auto; 
+        transform: translateY(0%); 
+    }
+    
+    /* Card interna (foglio nero) - NUOVO STILE */
+    .plant-card { 
+        width: 100%; 
+        height: 100%; /* << A TUTTO SCHERMO */
+        background-color: #000; /* << SFONDO NERO */
+        border-radius: 0; /* << NO ANGOLI SMUSSATI */
+        position: relative; 
+        display: flex; 
+        flex-direction: column; 
+        overflow: hidden; 
+    }
+
+    /* Maniglia per trascinare - NUOVO STILE */
+    .drag-handle {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 30px; /* Area per afferrare */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: grab;
+        z-index: 10;
+    }
+    .drag-handle-bar {
+        width: 40px;
+        height: 5px;
+        background-color: #555; /* Grigio scuro su nero */
+        border-radius: 3px;
+    }
+
+    /* Contenuto card - NUOVO STILE */
+    .card-content {
+        padding: 1.5rem; /* Padding uniforme */
+        padding-top: 40px; /* Spazio per la maniglia */
+        flex-grow: 1; 
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        color: white; /* << TESTO BIANCO DI DEFAULT */
+    }
+    .image-container { 
+        position: relative; 
+        border-radius: 20px; 
+        overflow: hidden; 
+        flex-shrink: 0; 
+    }
     .image-container img { width: 100%; display: block; }
-    h2 { text-align: center; margin: 1.5rem 0; font-size: 1.5rem; font-weight: 600; flex-shrink: 0; }
-    .pagination { display: flex; justify-content: center; gap: 8px; margin-top: auto; padding-top: 1rem; flex-shrink: 0; }
-    .swipe-container { width: 100%; overflow: hidden; flex-grow: 1; position: relative; margin-top: 1rem; }
+    
+    /* Header (Titolo + Bottone) - NUOVO STILE */
+    .title-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 1.5rem 0;
+        flex-shrink: 0;
+    }
+    h2 { 
+        text-align: left; 
+        margin: 0; 
+        font-size: 1.5rem; 
+        font-weight: 600; 
+        color: white; /* Assicura colore bianco */
+    }
+    /* Bottone Plus - Stile modificato (non più 'absolute') */
+    .plus-icon { 
+        position: relative; /* Non più absolute */
+        top: 0; right: 0;
+        background-color: #333; /* Sfondo grigio scuro */
+        border: 1px solid #555;
+    }
+    .plus-icon.is-added { background-color: #4CAF50; }
+
+    /* Stili Swipe (invariati, ma con colori aggiornati) */
+    .swipe-container { width: 100%; overflow: hidden; flex-grow: 1; position: relative; }
     .swipe-wrapper { display: flex; width: 200%; height: 100%; }
     .swipe-page { width: 50%; height: 100%; flex-shrink: 0; box-sizing: border-box; padding: 0 0.2rem; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
     .swipe-page::-webkit-scrollbar { display: none; }
-    .plant-details div { display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #f0f0f0; }
-    .plant-details dt { color: #6c6c70; }
-    .plant-details dd { margin: 0; color: #1c1c1e; font-weight: 500; }
-    .swipe-page h3 { font-size: 1rem; font-weight: 600; color: #1c1c1e; margin-bottom: 0.5rem; }
-    .plant-description { font-size: 0.95rem; line-height: 1.6; color: #3c3c3e; margin: 0; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background-color: #d1d1d6; transition: background-color 0.4s ease;}
+    
+    /* Dettagli pianta - Colori invertiti/aggiornati */
+    .plant-details div { display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #222; }
+    .plant-details dt { color: #fff; font-weight: 600; } /* Titolo bianco */
+    .plant-details dd { margin: 0; color: #8e8e93; font-weight: 500; } /* Valore grigio */
+    
+    .swipe-page h3 { font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem; }
+    .plant-description { font-size: 0.95rem; line-height: 1.6; color: #eee; margin: 0; }
+
+    /* Footer (Paginazione + Link) - NUOVO STILE */
+    .card-footer {
+        position: relative; /* Contesto per la paginazione */
+        display: flex;
+        justify-content: flex-end; /* Allinea link a destra */
+        align-items: center;
+        margin-top: auto; /* Spinge in fondo */
+        padding: 1.5rem 0 1rem 0;
+        flex-shrink: 0;
+    }
+    .pagination-container {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+    }
+    .collection-link {
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    /* Paginazione e Bottoni (invariati, tranne 'diamond' rimosso) */
+    .dot { width: 8px; height: 8px; border-radius: 50%; background-color: #555; transition: background-color 0.4s ease;}
     .dot.active { background-color: #619EE9; }
-    .icon-btn { position: absolute; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; color: white; }
-    .diamond-icon { bottom: 10px; right: 10px; background-color: transparent; font-size: 24px; color: white; }
-    .plus-icon { top: 10px; right: 10px; background-color: #619EE9; transition: background-color 0.4s ease; }
-    .plus-icon.is-added { background-color: #4CAF50; }
+    .icon-btn { border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; color: white; }
     .plus-icon svg { position: absolute; transition: transform 0.4s ease, opacity 0.4s ease; }
     .icon-plus { opacity: 1; transform: rotate(0deg) scale(1); }
     .icon-check { opacity: 0; transform: scale(0.5); }
     .plus-icon.is-added .icon-plus { opacity: 0; transform: rotate(180deg) scale(0.5); }
     .plus-icon.is-added .icon-check { opacity: 1; transform: scale(1) rotate(360deg); }
+
+    /* Bottone 'close-btn' rimosso */
 </style>
