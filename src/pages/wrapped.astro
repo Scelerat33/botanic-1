@@ -1,0 +1,241 @@
+---
+// src/pages/wrapped.astro
+// Nessun layout necessario
+---
+<html lang="it">
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Your 2025 Wrapped</title>
+</head>
+<body>
+    <div class="wrapped-container">
+        {/* Back Arrow Link */}
+        <a href="/personale" class="back-arrow-link" aria-label="Go back to Personal Collection">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5M5 12L11 18M5 12L11 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </a>
+
+        <header class="wrapped-header">
+            GLOBAL BOTANIC ARCHIVE
+        </header>
+
+        <main class="wrapped-content">
+            <div id="card-to-download" class="summary-card">
+                <div class="image-overlay-wrapper">
+                    {/* Contenitore che scorrerà */}
+                    <div class="image-slider-wrapper">
+                        {/* Immagini */}
+                        <div class="image-slide"><img src="/papiro-egiziano.jpg" alt="Papiro Egiziano" class="featured-image"/></div>
+                        <div class="image-slide"><img src="/fiore-colorato.jpg" alt="Fiore Colorato" class="featured-image"/></div>
+                        <div class="image-slide"><img src="/albero-rigoglioso.jpg" alt="Albero Rigoglioso" class="featured-image"/></div>
+                        <div class="image-slide"><img src="/pianta-grassa.jpg" alt="Pianta Grassa" class="featured-image"/></div>
+                    </div>
+                    
+                    {/* Testi Sovrapposti (Nuova Struttura) */}
+                    <div class="overlay-text overlay-top-left">
+                        Orto Botanico<br>
+                        Urbino, Italy
+                    </div>
+                    <div class="overlay-text overlay-top-right">
+                        25 • 10 • 2025<br>
+                        18°C
+                    </div>
+                    <div class="overlay-text overlay-bottom-center">
+                        You saw <span class="highlight">67 plants</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <button id="open-share-overlay" class="share-button-wrapped">
+                Share
+            </button>
+        </main>
+
+        {/* Overlay Condivisione (invariato) */}
+        <div id="share-overlay" class="share-overlay">
+            <div class="share-backdrop"></div>
+            <div class="share-sheet">
+                <button id="close-share-overlay" class="close-share-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6L18 18" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="share-header-action"><h2 class="share-title">Share <br>with friends</h2></div>
+                <p class="share-to-label">Share to</p>
+                <div class="social-icons">
+                    <a href="mailto:?subject=My%20Visit%20to%20Urbino's%20Botanical%20Garden&body=I%20had%20so%20much%20fun%20at%20the%20Urbino's%20Botanical%20Garden!%0A%0A(Don't%20forget%20to%20attach%20the%20image!)" class="social-item-link"><div class="social-item"><img src="/icons/mail.svg" alt="Mail" class="social-icon mail-icon"><span>Mail</span></div></a>
+                    <div class="social-item"><img src="/icons/instagram.svg" alt="Instagram" class="social-icon"><span>Instagram</span></div>
+                    <div class="social-item"><img src="/icons/whatsapp.svg" alt="Whatsapp" class="social-icon"><span>Whatsapp</span></div>
+                    <button id="save-card-btn" class="social-item-button"><div class="social-item"><img src="/icons/save.svg" alt="Save Image" class="social-icon save-icon"><span>Save</span></div></button>
+                </div>
+            </div>
+        </div>
+        {/* FINE OVERLAY */}
+    </div>
+</body>
+</html>
+
+<script>
+    import html2canvas from 'html2canvas';
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // ... (JavaScript rimane invariato) ...
+        // Elementi overlay condivisione
+        const openShareButton = document.getElementById('open-share-overlay');
+        const closeShareButton = document.getElementById('close-share-overlay');
+        const shareOverlay = document.getElementById('share-overlay');
+        const backdrop = shareOverlay.querySelector('.share-backdrop');
+        const saveCardButton = document.getElementById('save-card-btn');
+        const cardToDownload = document.getElementById('card-to-download');
+        const imageWrapper = cardToDownload.querySelector('.image-slider-wrapper');
+        const imageSlides = cardToDownload.querySelectorAll('.image-slide');
+        const imageCount = imageSlides.length;
+
+        if (!openShareButton || !closeShareButton || !shareOverlay || !backdrop || !saveCardButton || !cardToDownload || !imageWrapper || imageSlides.length === 0) { console.error("Required elements not found!"); return; }
+
+        function openOverlay() { shareOverlay.classList.add('is-visible'); }
+        function closeOverlay() { shareOverlay.classList.remove('is-visible'); }
+        openShareButton.addEventListener('click', openOverlay);
+        closeShareButton.addEventListener('click', closeOverlay);
+        backdrop.addEventListener('click', closeOverlay);
+
+        let currentImageIndex = 0, startX = 0, currentTranslate = 0, previousTranslate = 0, isDragging = false, cardWidth = cardToDownload.offsetWidth;
+
+         const resizeObserver = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                 if (entry.target === cardToDownload) {
+                     cardWidth = entry.contentRect.width;
+                     const targetTranslate = -currentImageIndex * cardWidth;
+                     imageWrapper.style.transition = 'none';
+                     imageWrapper.style.transform = `translateX(${targetTranslate}px)`;
+                     previousTranslate = targetTranslate;
+                     currentTranslate = targetTranslate;
+                     setTimeout(() => { imageWrapper.style.transition = 'transform 0.3s ease-out'; }, 50);
+                 }
+            }
+         });
+         resizeObserver.observe(cardToDownload);
+
+        function setSliderPosition() { imageWrapper.style.transform = `translateX(${currentTranslate}px)`; }
+        function snapToSlide() {
+            const targetTranslate = -currentImageIndex * cardWidth;
+            imageWrapper.style.transition = 'transform 0.3s ease-out';
+            imageWrapper.style.transform = `translateX(${targetTranslate}px)`;
+            previousTranslate = targetTranslate;
+            currentTranslate = targetTranslate;
+        }
+        function handleDragStart(clientX) { isDragging = true; startX = clientX; previousTranslate = -currentImageIndex * cardWidth; imageWrapper.style.transition = 'none'; cardToDownload.style.cursor = 'grabbing'; }
+        function handleDragMove(clientX) { if (!isDragging) return; const diffX = clientX - startX; currentTranslate = previousTranslate + diffX; setSliderPosition(); }
+        function handleDragEnd() {
+            if (!isDragging) return; isDragging = false; cardToDownload.style.cursor = 'grab';
+            const movedBy = currentTranslate - previousTranslate; const threshold = cardWidth / 4;
+            if (movedBy < -threshold && currentImageIndex < imageCount - 1) { currentImageIndex++; }
+            else if (movedBy > threshold && currentImageIndex > 0) { currentImageIndex--; }
+            snapToSlide();
+        }
+
+        cardToDownload.addEventListener('touchstart', (e) => handleDragStart(e.touches[0].clientX), { passive: true });
+        cardToDownload.addEventListener('touchmove', (e) => handleDragMove(e.touches[0].clientX), { passive: true });
+        cardToDownload.addEventListener('touchend', handleDragEnd);
+        cardToDownload.addEventListener('mousedown', (e) => handleDragStart(e.clientX));
+        cardToDownload.addEventListener('mousemove', (e) => { if (isDragging) e.preventDefault(); handleDragMove(e.clientX) });
+        cardToDownload.addEventListener('mouseup', handleDragEnd);
+        cardToDownload.addEventListener('mouseleave', () => { if (isDragging) handleDragEnd(); });
+
+        snapToSlide(); setTimeout(() => { imageWrapper.style.transition = 'transform 0.3s ease-out'; }, 50); cardToDownload.style.cursor = 'grab';
+
+        function downloadCardImage() {
+            console.log("Attempting to capture card...");
+            if (!html2canvas) { console.error("html2canvas library is not loaded!"); return; }
+            const scale = window.devicePixelRatio * 2;
+            html2canvas(cardToDownload, { allowTaint: true, useCORS: true, backgroundColor: null, scale: scale, width: cardToDownload.offsetWidth, height: cardToDownload.offsetHeight })
+            .then(canvas => {
+                const imageURL = canvas.toDataURL("image/png"); const downloadLink = document.createElement('a'); downloadLink.href = imageURL; downloadLink.download = `urbino-botanic-wrapped-img${currentImageIndex+1}.png`;
+                document.body.appendChild(downloadLink); downloadLink.click(); document.body.removeChild(downloadLink); console.log("Download triggered");
+            }).catch(error => { console.error("Error capturing card with html2canvas:", error); });
+        }
+        if(saveCardButton) saveCardButton.addEventListener('click', downloadCardImage);
+    });
+</script>
+
+<style>
+    /* Stili globali, container, freccia, header, content (invariati) */
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #d1d1d6; color: white; min-height: 100vh; padding-top: 50px; padding-bottom: 50px; box-sizing: border-box; }
+    .wrapped-container { width: 390px; height: 844px; background-color: #1C1C1E; border-radius: 40px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); position: relative; display: flex; flex-direction: column; overflow: hidden; margin: 0 auto; }
+    .back-arrow-link { position: absolute; top: 20px; left: 20px; z-index: 10; padding: 5px; display: flex; align-items: center; justify-content: center; }
+    .back-arrow-link svg { width: 30px; height: 30px; }
+    .back-arrow-link svg path { stroke: #ffffff; }
+    .wrapped-header { text-align: center; padding: 1.5rem 0; padding-top: 2rem; font-size: 0.8rem; font-weight: 600; letter-spacing: 1px; color: #ffffff; flex-shrink: 0; position: relative; }
+    .wrapped-content { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1rem; box-sizing: border-box; }
+
+    /* Stili Summary Card - Dimensioni aggiornate */
+    .summary-card {
+        background-color: #000000; border-radius: 25px;
+        width: 338px; height: 601px;
+        max-width: 100%;
+        overflow: hidden; margin-bottom: 2rem; position: relative; display: flex;
+        cursor: grab;
+    }
+    .summary-card:active { cursor: grabbing; }
+
+    /* Stili Slider Immagine (invariati) */
+    .image-overlay-wrapper { width: 100%; height: 100%; position: relative; overflow: hidden; }
+    .image-slider-wrapper { display: flex; height: 100%; }
+    .image-slide { width: 100%; height: 100%; flex-shrink: 0; }
+    .featured-image { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; -webkit-user-drag: none; }
+
+    /* ▼▼▼ NUOVI STILI TESTI OVERLAY ▼▼▼ */
+     .overlay-text {
+        position: absolute; color: white; padding: 1rem;
+        font-size: 0.9rem; line-height: 1.4;
+        pointer-events: none; user-select: none;
+    }
+    .overlay-top-left {
+        top: 0; left: 0; text-align: left;
+        line-height: 0.8rem;
+        font-weight: 500; font-size: 0.8rem;
+        transform: translateY(275px);
+
+
+    }
+    .overlay-top-right {
+        top: 0; right: 0; text-align: right;
+        font-weight: 500; font-size: 0.8rem;
+        line-height: 0.8rem;
+        transform: translateY(275px);
+    }
+    .overlay-bottom-center {
+        bottom: 0; left: 0; right: 0; text-align: center;
+        padding-bottom: 1.5rem; font-size: 1.3rem; font-weight: 500;
+    }
+    .overlay-bottom-center .highlight { font-weight: bold; }
+     /* ▲▲▲ FINE NUOVI STILI TESTI ▲▲▲ */
+
+    .share-button-wrapped { background-color: #619EE9; color: white; border: none; border-radius: 50px; padding: 1rem 0; font-size: 1rem; font-weight: 600; cursor: pointer; width: 80%; max-width: 280px; transition: background-color 0.3s ease; }
+    .share-button-wrapped:hover { background-color: #4A8ED8; }
+
+    /* Stili Overlay Condivisione (invariati) */
+    .share-overlay { position: absolute; inset: 0; z-index: 1000; display: flex; justify-content: center; align-items: flex-end; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.3s ease, visibility 0s linear 0.3s; }
+    .share-overlay.is-visible { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity 0.3s ease, visibility 0s linear 0s; }
+    .share-backdrop { position: absolute; inset: 0; background-color: rgba(0, 0, 0, 0.4); }
+    .share-sheet { width: 100%; background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); color: #1C1C1E; border-radius: 25px 25px 0 0; padding: 1.5rem; box-sizing: border-box; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); padding-bottom: 3rem; position: relative; z-index: 1; }
+    .share-overlay.is-visible .share-sheet { transform: translateY(0); }
+    .close-share-btn { position: absolute; top: 1rem; right: 1rem; background-color: rgba(0, 0, 0, 0.1); border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 10; }
+    .close-share-btn svg path { stroke: #333; }
+    .share-header-action { margin-bottom: 2rem; margin-top: 1rem; }
+    .share-title { font-size: 2.5rem; font-weight: 700; line-height: 1.1; margin: 0; text-align: left; color: #1C1C1E; }
+    .share-to-label { text-align: left; color: #555; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .social-icons { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 0 0.5rem; }
+    .social-item-link { text-decoration: none; }
+    .social-item-button { background: none; border: none; padding: 0; cursor: pointer; text-align: inherit; font: inherit; }
+    .social-item { display: flex; flex-direction: column; align-items: center; color: #555; font-size: 0.75rem; text-align: center; gap: 0.5rem; }
+    .social-icon { width: 50px; height: 50px; border-radius: 12px; padding: 8px; box-sizing: border-box; transition: transform 0.2s ease; }
+    .social-icon:hover { transform: scale(1.05); }
+    .social-icon.mail-icon { background-color: #777; }
+    .social-item:nth-child(2) .social-icon { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+    .social-item:nth-child(3) .social-icon { background-color: #25D366; }
+    .save-icon { background-color: #555; }
+</style>

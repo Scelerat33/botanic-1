@@ -1,67 +1,40 @@
 ---
 import Airtable from 'airtable';
 
-// --- 1. DIAGNOSTICA E CARICAMENTO VARIABILI D'AMBIENTE ---
-console.log("--- Inizio esecuzione script Astro ---");
-
+// Il codice di recupero dati da Airtable rimane identico...
 const apiKey = import.meta.env.PUBLIC_AIRTABLE_API_KEY;
 const baseId = import.meta.env.PUBLIC_AIRTABLE_BASE_ID;
 const tableName = import.meta.env.PUBLIC_AIRTABLE_TABLE_NAME;
-
-console.log("Chiave API Caricata:", apiKey ? `Sì, inizia con '${apiKey.substring(0, 4)}...'` : "NO, 'undefined'!");
-console.log("Base ID Caricato:", baseId ? `Sì, '${baseId}'` : "NO, 'undefined'!");
-console.log("Nome Tabella Caricato:", tableName ? `Sì, '${tableName}'` : "NO, 'undefined'!");
-
 const titolo = "URBINO BOTANICAL GARDEN";
 let items = [];
-let marqueeText = ' • '; // Valore di default per il marquee
+let marqueeText = ' • ';
 
-// Controlla che le variabili esistano prima di tentare la connessione
 if (apiKey && baseId && tableName) {
     try {
         const base = new Airtable({ apiKey }).base(baseId);
-        console.log("Connessione ad Airtable in corso...");
-
-        const records = await base(tableName)
-            .select({ maxRecords: 300 })
-            .all();
-        
-        console.log(`[SUCCESSO] Recuperati ${records.length} record da Airtable.`);
-
-        if (records.length > 0) {
-            console.log("STRUTTURA DEL PRIMO RECORD (controlla i nomi dei campi qui):", records[0].fields);
-        }
-
-        // USO LA TUA MAPPATURA DETTAGLIATA DEI DATI CON I VALORI DI DEFAULT
+        const records = await base(tableName).select({ maxRecords: 547 }).all();
         items = records.map(record => ({
             id: record.id,
-            nome: record.fields.Name || 'N/D',
-            scientific: record.fields.Scientific || 'N/D',
-            famiglia: record.fields.Famiglia || 'N/D',
-            categoria: record.fields.Category || 'Senza Categoria',
-            image: record.fields.Photo?.[0]?.thumbnails?.large?.url || record.fields.Photo?.[0]?.url,
-            lat: record.fields.Latitude || null,
-            lng: record.fields.Longitude || null,
-            description: record.fields.Description || 'Nessuna descrizione disponibile.',
-            divisione: record.fields.Divisione || null,
-            classe: record.fields.Classe || null,
-            sottoclasse: record.fields.Sottoclasse || null,
+            nome: record.fields.nome || 'N/D',
+            scientific: record.fields.scientific || 'N/D',
+            famiglia: record.fields.family || 'N/D',
+            categoria: record.fields.category || 'Senza Categoria',
+            image: record.fields.photo_macro?.[0]?.thumbnails?.large?.url || record.fields.photo_macro?.[0]?.url,
+            description: record.fields.description || 'Nessuna descrizione.',
+            divisione: record.fields.cronquist || null,
+            classe: record.fields.class || null,
+            sottoclasse: record.fields.s_class || null,
+            ordine: record.fields.order || null,
+            genere: record.fields.genere || null,
             tribù: record.fields.Tribù || null,
         }));
-
-        // GENERO I DATI PER IL MARQUEE DOPO AVER CARICATO GLI ITEMS
         const uniqueFamilies = [...new Set(items.map(item => item.famiglia).filter(Boolean))];
         if (uniqueFamilies.length > 0) {
             marqueeText = uniqueFamilies.slice(0, 10).join(' • ') + ' • ';
         }
-
     } catch (error) {
-        console.error("\n[ERRORE GRAVE] Impossibile caricare i dati da Airtable.");
-        console.error("L'errore è probabilmente causato da una API Key, Base ID o Nome Tabella non corretti, oppure da un nome di campo errato nel 'sort'.");
-        console.error("Dettagli tecnici dell'errore:", error);
+        console.error("Errore caricamento dati:", error);
     }
-} else {
-    console.error("\n[ERRORE] Una o più variabili d'ambiente non sono state trovate. Controlla il tuo file .env e riavvia il server.");
 }
 ---
 
@@ -69,23 +42,22 @@ if (apiKey && baseId && tableName) {
 <head>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <title>{titolo} - Archivio</title>
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
+  /* Tutti gli stili CSS rimangono quasi identici, ma vengono rimossi quelli non più necessari */
   :root {
     --bg-color: #ffffff; --text-color: #111111; --subtle-text-color: #666666;
     --border-color: #eaeaea; --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
   html.dark {
-    --bg-color: #111111; --text-color: #eaeaea; --subtle-text-color: #999999; --border-color: #333333;
+    --bg-color: #000000; --text-color: #eaeaea; --subtle-text-color: #999999; --border-color: #000000;
   }
   body { font-family: var(--font-main); background-color: var(--bg-color); color: var(--text-color); margin: 0; transition: background-color 0.3s ease, color 0.3s ease;}
 
@@ -93,257 +65,48 @@ if (apiKey && baseId && tableName) {
   .header-content { max-width: 1400px; width: 100%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
   .site-title { font-weight: 600; font-size: 1rem; margin: 0; }
   .site-nav { display: flex; align-items: center; gap: 0.5rem; }
-  #search-input, #theme-toggle { background: none; border: 1px solid var(--border-color); border-radius: 99px; color: var(--text-color); padding: 0.4rem 0.8rem; font-size: 0.9rem; cursor: pointer; }
-  .marquee-container { width: 100%; overflow: hidden; padding: 1rem 0; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background-color 0.3s ease; }
-  .marquee-container:hover { background-color: var(--text-color); }
-  .marquee-container:hover .marquee-text { color: var(--bg-color); }
-  .marquee-text { font-size: 10rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; display: inline-block; transition: color 0.3s ease; animation: scroll-right-to-left 75s linear infinite; }
+  #search-input { background: none; border: 1px solid var(--border-color); border-radius: 99px; color: var(--text-color); padding: 0.4rem 0.8rem; font-size: 0.9rem; }
+  .icon-button { background: none; border: 1px solid var(--border-color); border-radius: 99px; color: var(--text-color); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; text-decoration: none; transition: all 0.2s ease; }
+  .icon-button:hover { background-color: var(--border-color); }
+  .icon-button svg { stroke: var(--text-color); }
+
+  .marquee-container { width: 100%; overflow: hidden; padding: 1rem 0; border-bottom: 1px solid var(--border-color); cursor: pointer; }
+  .marquee-text { font-size: 10rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; display: inline-block; animation: scroll-right-to-left 75s linear infinite; }
   @keyframes scroll-right-to-left { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
   .main-content { max-width: 1400px; width: 100%; margin: 0 auto; padding: 1.5rem; box-sizing: border-box; }
   .view-switcher { display: flex; border: 1px solid var(--border-color); }
-  .view-button {
-    flex: 1; text-align: center; background: none; border: none;
-    color: var(--subtle-text-color); padding: 1rem 0; cursor: pointer;
-    font-size: 0.9rem; font-weight: 500; text-transform: uppercase;
-    transition: all 0.2s ease;
-  }
+  .view-button { flex: 1; text-align: center; background: none; border: none; color: var(--subtle-text-color); padding: 1rem 0; cursor: pointer; font-size: 0.9rem; font-weight: 500; text-transform: uppercase; transition: all 0.2s ease; }
   .view-button:hover { background-color: var(--border-color); }
-  .view-button.active { background-color: var(--text-color); color: var(--bg-color); cursor: default; }
-  .view-button.active:hover { background-color: var(--text-color); }
+  .view-button.active { background-color: var(--text-color); color: var(--bg-color); }
   .view-button + .view-button { border-left: 1px solid var(--border-color); }
   .view-container { display: none; padding-top: 2rem; }
   .view-container.active { display: block; }
   .message { text-align: center; padding: 4rem 1rem; color: var(--subtle-text-color); }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1rem;
-    align-items: start;
-  }
-  
-  .card {
-    border: 1px solid var(--border-color);
-    position: relative;
-    cursor: pointer;
-    overflow: hidden;
-    transition: max-height 0.8s cubic-bezier(0.23, 1, 0.32, 1);
-  }
-
-  .card-image-wrapper {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .card-image-wrapper::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 50%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-    z-index: 2;
-  }
-
-  .card:hover .card-image-wrapper::before {
-    opacity: 1;
-  }
-
-  .card-main-content { }
-
-  .card img {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    object-fit: cover;
-    display: block;
-    background-color: var(--border-color);
-  }
-
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; align-items: start; }
+  .card { border: 1px solid var(--border-color); position: relative; cursor: pointer; overflow: hidden; transition: max-height 0.8s cubic-bezier(0.23, 1, 0.32, 1); }
+  .card-image-wrapper { position: relative; overflow: hidden; }
+  .card-image-wrapper::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 50%); opacity: 0; transition: opacity 0.3s ease; z-index: 2; }
+  .card:hover .card-image-wrapper::before { opacity: 1; }
+  .card img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; background-color: var(--border-color); }
   .card-content { padding: 0.75rem; }
   .card-content h3 { font-size: 1rem; margin: 0 0 0.2rem 0; }
   .card-content p { font-size: 0.9rem; margin: 0; color: var(--subtle-text-color); }
-
-  .card-details-panel {
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    padding: 0 1rem;
-    box-sizing: border-box;
-    transition: max-height 0.8s ease-in-out, opacity 0.6s ease-in, padding 0.8s ease-in-out;
-  }
-  .card-details-panel p {
-    font-size: 0.9rem;
-    line-height: 1.5;
-    margin-bottom: 1.5rem;
-  }
-  .taxonomy-list {
-    border-top: 1px solid var(--border-color);
-    padding-top: 0.5rem;
-    font-size: 0.85rem;
-  }
-  .taxonomy-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.4rem 0;
-  }
+  .card-details-panel { max-height: 0; opacity: 0; overflow: hidden; padding: 0 1rem; }
+  .card-details-panel p { font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.5rem; }
+  .taxonomy-list { border-top: 1px solid var(--border-color); padding-top: 0.5rem; font-size: 0.85rem; }
+  .taxonomy-item { display: flex; justify-content: space-between; padding: 0.4rem 0; }
   .taxonomy-item span:last-child { color: var(--subtle-text-color); }
-
-  .card.expanded {
-    cursor: default;
-    max-height: 2000px;
-  }
-  
-  .card.expanded .card-details-panel {
-    max-height: 1000px;
-    opacity: 1;
-    padding: 0 1rem 1.5rem 1rem;
-    transition: max-height 1s ease-in-out, opacity 0.7s 0.3s ease-in, padding 1s ease-in-out;
-  }
-
-  .herbarium-btn {
-    position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(255, 255, 255, 0.7);
-    border-radius: 50%; border: none; cursor: pointer; width: 30px; height: 30px;
-    font-size: 1.5rem; line-height: 28px; text-align: center; color: #111;
-    opacity: 0; transition: all 0.2s ease; z-index: 5;
-  }
+  .card.expanded { max-height: 2000px; }
+  .card.expanded .card-details-panel { max-height: 1000px; opacity: 1; padding: 0 1rem 1.5rem 1rem; }
+  .herbarium-btn { position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(255, 255, 255, 0.7); border-radius: 50%; border: none; cursor: pointer; width: 30px; height: 30px; font-size: 1.5rem; line-height: 28px; text-align: center; color: #111; opacity: 0; transition: all 0.2s ease; z-index: 5; }
   html.dark .herbarium-btn { background: rgba(0,0,0,0.5); color: #fff; }
   .card:hover .herbarium-btn { opacity: 1; }
   .herbarium-btn.active { background: var(--text-color); color: var(--bg-color); opacity: 1; transform: rotate(45deg); }
-  
   .archive-table { width: 100%; border-collapse: collapse; }
   .archive-table th, .archive-table td { text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
   .archive-table th { font-weight: 600; text-transform: uppercase; font-size: 0.8rem; }
-  .archive-table tr { transition: background-color 0.2s ease; }
   .archive-table tr:hover { background-color: var(--border-color); }
-  .archive-table td img { width: 40px; height: 40px; object-fit: cover; vertical-align: middle; margin-right: 1rem; background-color: var(--border-color); }
-
-  #map { height: 70vh; border: 1px solid var(--border-color); background-color: var(--border-color); }
-  .map-note { font-size: 0.8rem; color: var(--subtle-text-color); text-align: center; margin-top: 1rem; }
-
-  /* NUOVI STILI PER IL CONFIGURATORE POSTER */
-  .herbarium-actions {
-    text-align: center;
-    margin-bottom: 2rem;
-  }
-  .action-btn {
-    background-color: var(--text-color);
-    color: var(--bg-color);
-    border: 1px solid var(--text-color);
-    padding: 0.8rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  .action-btn:hover {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-  }
-
-  .modal-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 1000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .modal-content {
-    background: var(--bg-color);
-    width: 90%;
-    max-width: 1200px;
-    height: 90vh;
-    display: flex;
-    flex-direction: column;
-  }
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-  }
-  .modal-header h2 { margin: 0; font-size: 1.2rem; }
-  .close-btn {
-    background: none; border: none; font-size: 2rem;
-    cursor: pointer; color: var(--text-color);
-  }
-  .creator-body {
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    flex-grow: 1;
-    overflow: hidden;
-  }
-  .poster-controls {
-    padding: 1.5rem;
-    border-right: 1px solid var(--border-color);
-    overflow-y: auto;
-  }
-  .control-group { margin-bottom: 1.5rem; }
-  .control-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500; }
-  .control-group select, .control-group input[type="color"] { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); }
-  .radio-group, .checkbox-group { display: flex; flex-direction: column; gap: 0.5rem; }
-
-  .poster-preview {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #e0e0e0;
-    padding: 2rem;
-    overflow: auto;
-  }
-  html.dark .poster-preview { background-color: #222; }
-
-  #poster-canvas {
-    width: 100%;
-    max-width: 500px;
-    aspect-ratio: 2 / 3;
-    background-color: white;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    padding: 2rem;
-    box-sizing: border-box;
-    display: flex;
-    transition: all 0.3s ease;
-  }
-  #poster-canvas img { width: 100%; height: auto; object-fit: cover; }
-  #poster-canvas .poster-text { text-align: center; }
-  #poster-canvas h3 { font-size: 2rem; margin: 0.5em 0 0.2em; }
-  #poster-canvas p { font-size: 1rem; margin: 0.2em 0; }
-
-  /* Layouts */
-  #poster-canvas.layout-a {
-    flex-direction: column;
-  }
-  #poster-canvas.layout-a img {
-    flex-basis: 60%;
-    height: 60%;
-  }
-  #poster-canvas.layout-a .poster-text {
-    flex-basis: 40%;
-    padding-top: 1rem;
-  }
-
-  #poster-canvas.layout-b {
-    flex-direction: row;
-    aspect-ratio: 3 / 2;
-    gap: 1.5rem;
-    align-items: center;
-  }
-  #poster-canvas.layout-b img {
-    flex-basis: 50%;
-    width: 50%;
-    height: 100%;
-  }
-  #poster-canvas.layout-b .poster-text {
-    flex-basis: 50%;
-    text-align: left;
-  }
+  .archive-table td img { width: 40px; height: 40px; object-fit: cover; vertical-align: middle; margin-right: 1rem; }
 </style>
 </head>
 <body>
@@ -353,7 +116,12 @@ if (apiKey && baseId && tableName) {
             <h1 class="site-title">{titolo}</h1>
             <nav class="site-nav">
                 <input type="search" id="search-input" placeholder="Cerca per nome...">
-                <button id="theme-toggle" title="Cambia tema">🌓</button>
+                
+                <a href="/personale" class="icon-button" title="Area Personale">
+                    <svg xmlns="http://www.w.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </a>
+                
+                <button id="theme-toggle" class="icon-button" title="Cambia tema">🌓</button>
             </nav>
         </div>
     </header>
@@ -366,26 +134,21 @@ if (apiKey && baseId && tableName) {
         <div class="view-switcher">
             <button class="view-button active" data-view="grid-view">Griglia</button>
             <button class="view-button" data-view="archive-view">Archivio</button>
-            <button class="view-button" data-view="map-view">Mappa</button>
-            <button class="view-button" data-view="herbarium-view">Il tuo erbario</button>
-        </div>
+            </div>
 
         <div id="grid-view" class="view-container active">
             <div class="grid">
                 {items.map(item => (
                     <article class="card item-container" data-id={item.id} data-search-terms={`${item.nome.toLowerCase()} ${item.scientific.toLowerCase()}`}>
-                        
                         <div class="card-main-content">
                             <div class="card-image-wrapper">
                                 <img src={item.image || 'https://via.placeholder.com/300'} alt={`Foto di ${item.nome}`} loading="lazy" />
                             </div>
-                            
                             <div class="card-content">
                                 <h3>{item.nome}</h3>
                                 <p>{item.scientific}</p>
                             </div>
                         </div>
-
                         <div class="card-details-panel">
                             <p>{item.description}</p>
                             <div class="taxonomy-list">
@@ -396,8 +159,7 @@ if (apiKey && baseId && tableName) {
                                 {item.tribù && <div class="taxonomy-item"><span>Tribù</span> <span>{item.tribù}</span></div>}
                             </div>
                         </div>
-
-                        <button class="herbarium-btn" title="Aggiungi all'erbario">+</button>
+                        <button class="herbarium-btn" title="Aggiungi alla tua area personale">+</button>
                     </article>
                 ))}
             </div>
@@ -427,97 +189,8 @@ if (apiKey && baseId && tableName) {
             </table>
         </div>
 
-        <div id="map-view" class="view-container">
-            <div id="map"></div>
-            <p class="map-note">Mostra le piante su una mappa. Assicurati di avere colonne "Latitude" e "Longitude" nel tuo Airtable.</p>
-        </div>
-
-        <div id="herbarium-view" class="view-container">
-            <div class="herbarium-actions">
-                <button id="open-poster-creator-btn" class="action-btn">Crea il tuo Poster</button>
-            </div>
-             <div class="grid" id="herbarium-grid">
-             </div>
-             <p id="no-herbarium-message" class="message" style="display: none;">
-                Il tuo erbario è vuoto. Clicca sul '+' nelle schede delle piante per aggiungerle.
-            </p>
-        </div>
-
         <p id="no-results-message" class="message" style="display: none;">Nessun risultato trovato per la tua ricerca.</p>
-
     </main>
-
-<div id="poster-creator-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-        
-        <div class="modal-header">
-            <h2>Configuratore Poster</h2>
-            <button id="close-modal-btn" class="close-btn">&times;</button>
-        </div>
-
-        <div class="creator-body">
-            <div class="poster-controls">
-                
-                <div class="control-group">
-                    <label for="plant-select">Scegli una pianta dall'erbario:</label>
-                    <select id="plant-select"></select>
-                </div>
-
-                <div class="control-group">
-                    <label>Layout del Poster:</label>
-                    <div class="radio-group">
-                        <label><input type="radio" name="layout" value="layout-a" checked> Verticale</label>
-                        <label><input type="radio" name="layout" value="layout-b"> Orizzontale</label>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label>Elementi da includere:</label>
-                    <div class="checkbox-group">
-                        <label><input type="checkbox" data-element="scientific-name" checked> Nome Scientifico</label>
-                        <label><input type="checkbox" data-element="family-name" checked> Famiglia</label>
-                        <label><input type="checkbox" data-element="description"> Descrizione</label>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label for="bg-color">Colore Sfondo:</label>
-                    <input type="color" id="bg-color" value="#f4f4f4">
-                </div>
-                
-                <div class="control-group">
-                    <label for="text-color">Colore Testo:</label>
-                    <input type="color" id="text-color" value="#111111">
-                </div>
-                
-                <div class="control-group">
-                    <label for="font-select">Carattere:</label>
-                    <select id="font-select">
-                        <option value="serif">Serif (es. Times New Roman)</option>
-                        <option value="sans-serif" selected>Sans-Serif (es. Arial)</option>
-                        <option value="monospace">Monospace (es. Courier)</option>
-                    </select>
-                </div>
-
-                <button id="download-poster-btn" class="action-btn">Download Poster</button>
-
-            </div>
-
-            <div class="poster-preview">
-                <div id="poster-canvas" class="layout-a">
-                    <img id="poster-img" src="" alt="Anteprima pianta">
-                    <div class="poster-text">
-                        <h3 id="poster-common-name"></h3>
-                        <p id="poster-scientific-name"></p>
-                        <p id="poster-family-name"></p>
-                        <p id="poster-description"></p>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-</div>
 
 <script define:vars={{ items }}>
 document.addEventListener('DOMContentLoaded', () => {
@@ -538,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 2. GESTIONE CAMBIO VISUALIZZAZIONE ---
     const viewButtons = document.querySelectorAll('.view-button');
     const viewContainers = document.querySelectorAll('.view-container');
-    let mapInitialized = false;
     viewButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetViewId = button.dataset.view;
@@ -546,13 +218,6 @@ document.addEventListener('DOMContentLoaded', () => {
             viewContainers.forEach(container => {
                 container.classList.toggle('active', container.id === targetViewId);
             });
-            if (targetViewId === 'map-view' && !mapInitialized) {
-                initMap();
-                mapInitialized = true;
-            }
-            if (targetViewId === 'herbarium-view') {
-                renderHerbarium();
-            }
         });
     });
 
@@ -572,9 +237,8 @@ document.addEventListener('DOMContentLoaded', () => {
         noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
     });
 
-    // --- 4. GESTIONE ERBARIO (FAVORITI) ---
-    const herbariumGrid = document.getElementById('herbarium-grid');
-    const noHerbariumMessage = document.getElementById('no-herbarium-message');
+    // --- 4. GESTIONE SALVATAGGIO IN COLLEZIONE PERSONALE ---
+    // Questa logica rimane qui per permettere di AGGIUNGERE elementi
     let herbariumIds = JSON.parse(localStorage.getItem('herbarium')) || [];
     const saveHerbarium = () => {
         localStorage.setItem('herbarium', JSON.stringify(herbariumIds));
@@ -585,214 +249,44 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.classList.toggle('active', herbariumIds.includes(cardId));
         });
     };
-    const renderHerbarium = () => {
-        herbariumGrid.innerHTML = '';
-        const favoriteItems = items.filter(item => herbariumIds.includes(item.id));
-        if (favoriteItems.length > 0) {
-            favoriteItems.forEach(item => {
-                const originalCard = document.querySelector(`.card[data-id="${item.id}"]`);
-                if (originalCard) {
-                    herbariumGrid.appendChild(originalCard.cloneNode(true));
-                }
-            });
-            noHerbariumMessage.style.display = 'none';
-        } else {
-            noHerbariumMessage.style.display = 'block';
-        }
-        updateHerbariumButtons();
-    };
     
+    document.body.addEventListener('click', e => {
+        if (e.target.matches('.herbarium-btn')) {
+            e.stopPropagation();
+            const card = e.target.closest('.item-container');
+            const cardId = card.dataset.id;
+            if (herbariumIds.includes(cardId)) {
+                herbariumIds = herbariumIds.filter(id => id !== cardId);
+            } else {
+                herbariumIds.push(cardId);
+            }
+            saveHerbarium();
+            updateHerbariumButtons();
+        }
+    });
+
     // --- 5. GESTIONE ESPANSIONE CARD NELLA GRIGLIA ---
     const grid = document.querySelector('#grid-view .grid');
     if (grid) {
         grid.addEventListener('click', (e) => {
-            if (e.target.closest('.herbarium-btn')) {
-                return;
-            }
+            if (e.target.closest('.herbarium-btn')) return;
             const clickedCard = e.target.closest('.card');
             if (!clickedCard) return;
-
             const currentlyExpanded = grid.querySelector('.card.expanded');
-
             if (currentlyExpanded && currentlyExpanded !== clickedCard) {
                 currentlyExpanded.classList.remove('expanded');
             }
-
             clickedCard.classList.toggle('expanded');
-
             if (clickedCard.classList.contains('expanded')) {
-                setTimeout(() => {
-                    clickedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 150);
+                setTimeout(() => clickedCard.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
             }
         });
     }
     
-    // --- 6. INIZIALIZZAZIONE GLOBALE E LISTENER ERBARIO ---
-    const setupHerbariumListeners = () => {
-        document.body.addEventListener('click', e => {
-            if (e.target.matches('.herbarium-btn')) {
-                e.stopPropagation();
-                const card = e.target.closest('.item-container');
-                const cardId = card.dataset.id;
-                if (herbariumIds.includes(cardId)) {
-                    herbariumIds = herbariumIds.filter(id => id !== cardId);
-                } else {
-                    herbariumIds.push(cardId);
-                }
-                saveHerbarium();
-                updateHerbariumButtons();
-                if(document.getElementById('herbarium-view').classList.contains('active')) {
-                    renderHerbarium();
-                }
-            }
-        });
-    };
-
-    function initMap() {
-        if (typeof L === 'undefined') {
-            console.error('Libreria Leaflet non trovata.');
-            return;
-        }
-        const itemsWithCoords = items.filter(item => item.lat && item.lng);
-        let centerLat = 43.715;
-        let centerLng = 12.636;
-        let defaultZoom = 15;
-
-        if (itemsWithCoords.length > 0) {
-            centerLat = itemsWithCoords.reduce((sum, item) => sum + item.lat, 0) / itemsWithCoords.length;
-            centerLng = itemsWithCoords.reduce((sum, item) => sum + item.lng, 0) / itemsWithCoords.length;
-        }
-        const map = L.map('map').setView([centerLat, centerLng], defaultZoom);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
-        itemsWithCoords.forEach(item => {
-            const popupContent = `<b>${item.nome}</b><br><i>${item.scientific}</i>`;
-            L.marker([item.lat, item.lng]).addTo(map).bindPopup(popupContent);
-        });
-    }
-
-    // --- 7. NUOVO: GESTIONE CONFIGURATORE POSTER ---
-    const posterModal = document.getElementById('poster-creator-modal');
-    const openBtn = document.getElementById('open-poster-creator-btn');
-    const closeBtn = document.getElementById('close-modal-btn');
-    const downloadBtn = document.getElementById('download-poster-btn');
-
-    const plantSelect = document.getElementById('plant-select');
-    const layoutRadios = document.querySelectorAll('input[name="layout"]');
-    const contentCheckboxes = document.querySelectorAll('.checkbox-group input');
-    const bgColorInput = document.getElementById('bg-color');
-    const textColorInput = document.getElementById('text-color');
-    const fontSelect = document.getElementById('font-select');
-
-    const posterCanvas = document.getElementById('poster-canvas');
-    const posterImg = document.getElementById('poster-img');
-    const posterCommonName = document.getElementById('poster-common-name');
-    const posterScientificName = document.getElementById('poster-scientific-name');
-    const posterFamilyName = document.getElementById('poster-family-name');
-    const posterDescription = document.getElementById('poster-description');
-
-    function populatePlantSelector() {
-        plantSelect.innerHTML = '';
-        const favoriteItems = items.filter(item => herbariumIds.includes(item.id));
-
-        if (favoriteItems.length === 0) {
-            const option = document.createElement('option');
-            option.textContent = 'Aggiungi piante all\'erbario prima!';
-            option.disabled = true;
-            plantSelect.appendChild(option);
-            downloadBtn.disabled = true;
-            return;
-        }
-        
-        downloadBtn.disabled = false;
-        favoriteItems.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.id;
-            option.textContent = item.nome;
-            plantSelect.appendChild(option);
-        });
-    }
-
-    function updatePreview() {
-        const selectedId = plantSelect.value;
-        if (!selectedId) return;
-
-        const plantData = items.find(item => item.id === selectedId);
-        if (!plantData) return;
-        
-        // 1. Aggiorna Contenuti
-        posterImg.src = plantData.image || 'https://via.placeholder.com/400';
-        posterCommonName.textContent = plantData.nome;
-        posterScientificName.textContent = plantData.scientific;
-        posterFamilyName.textContent = `Fam. ${plantData.famiglia}`;
-        posterDescription.textContent = plantData.description;
-
-        // 2. Aggiorna Visibilità Elementi
-        contentCheckboxes.forEach(cb => {
-            const elementId = `poster-${cb.dataset.element}`;
-            const element = document.getElementById(elementId);
-            if (element) {
-                element.style.display = cb.checked ? 'block' : 'none';
-            }
-        });
-
-        // 3. Aggiorna Stili
-        posterCanvas.style.backgroundColor = bgColorInput.value;
-        posterCanvas.style.color = textColorInput.value;
-        posterCanvas.style.fontFamily = fontSelect.value;
-
-        // 4. Aggiorna Layout
-        const selectedLayout = document.querySelector('input[name="layout"]:checked').value;
-        posterCanvas.className = ''; // Rimuove tutte le classi
-        posterCanvas.classList.add(selectedLayout);
-    }
-
-    // Event Listeners per il modal
-    if (openBtn) {
-        openBtn.addEventListener('click', () => {
-            populatePlantSelector();
-            updatePreview();
-            posterModal.style.display = 'flex';
-        });
-    }
-
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            posterModal.style.display = 'none';
-        });
-    }
-
-    if (downloadBtn) {
-        downloadBtn.addEventListener('click', () => {
-            downloadBtn.textContent = '⏳ Sto creando...';
-            // html2canvas ha bisogno che le immagini siano caricate dal server in modo "CORS-friendly". 
-            // Le immagini da Airtable di solito funzionano bene.
-            html2canvas(posterCanvas, { useCORS: true, allowTaint: true }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `poster-${plantSelect.options[plantSelect.selectedIndex].text.toLowerCase().replace(/ /g, '_')}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                downloadBtn.textContent = '🖼️ Scarica Poster';
-            }).catch(err => {
-                console.error("Errore con html2canvas:", err);
-                alert("Errore durante la creazione del poster. Controlla la console per i dettagli.");
-                downloadBtn.textContent = '🖼️ Scarica Poster';
-            });
-        });
-    }
-
-    // Aggiorna l'anteprima quando un controllo cambia
-    const allControls = [plantSelect, bgColorInput, textColorInput, fontSelect, ...layoutRadios, ...contentCheckboxes];
-    allControls.forEach(control => {
-        control.addEventListener('change', updatePreview);
-        control.addEventListener('input', updatePreview); // Per i color picker
-    });
-
     // --- Chiamate iniziali ---
     updateHerbariumButtons();
-    setupHerbariumListeners();
+
+    // RIMOSSA tutta la logica del poster creator e del rendering dell'erbario
 });
 </script>
 

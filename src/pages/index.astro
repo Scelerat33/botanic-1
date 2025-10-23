@@ -1,161 +1,163 @@
 ---
-// FILE: src/pages/index.astro
-import Airtable from 'airtable';
+import MobileLayout from '../layouts/MobileLayout.astro';
 
-// 1. CONFIGURAZIONE AIRTABLE
-const base = new Airtable({
-  apiKey: import.meta.env.PUBLIC_AIRTABLE_API_KEY
-}).base(import.meta.env.PUBLIC_AIRTABLE_BASE_ID);
+// --- DEFINIZIONE DATI ---
+// Per risolvere il "ReferenceError", definiamo 'items' qui.
+// SOSTITUISCI QUESTO ARRAY con il tuo sistema di recupero dati (es. Astro.glob)
+// Assicurati che ogni oggetto abbia una proprietà 'image' con un percorso valido.
+const items = [
+  { image: '/images/archivio/fiore-01.jpg' },
+  { image: '/images/archivio/fiore-02.jpg' },
+  { image: '/images/archivio/fiore-03.jpg' },
+  { image: '/images/archivio/fiore-04.jpg' },
+  // Aggiungi quante immagini vuoi...
+];
 
-// 2. RECUPERO DATI
-let items = [];
-try {
-  const records = await base(import.meta.env.PUBLIC_AIRTABLE_TABLE_NAME)
-    .select({ 
-        maxRecords: 50,
-        sort: [{field: "Name", direction: "asc"}] 
-    })
-    .all();
- 
-  items = records.map(record => ({
-    id: record.id,
-    nome: record.fields.Name || 'N/D',
-    image: record.fields.Photo?.[0]?.thumbnails?.large?.url || record.fields.Photo?.[0]?.url,
-  }));
-} catch (error) {
-  console.error('Errore caricamento dati:', error);
+// Controlla se 'items' è un array (buona prassi)
+if (!Array.isArray(items)) {
+  console.error("ERRORE: 'items' non è un array. Controlla il recupero dati.");
 }
 
-const titolo = "URBINO BOTANICAL GARDEN";
+const imageInterval = 100; // Intervallo in millisecondi
 ---
 
-<html lang="it">
-<head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>{titolo} - Home</title>
+<MobileLayout>
+  <div class="landing-wrapper">
+
+    {items.length > 0 ? (
+      <div class="rapid-sequence-background">
+        {items.map((item, index) => (
+            <img
+                src={item.image}
+                alt="Immagine dall'archivio botanico"
+                class:list={["background-image", { "is-visible": index === 0 }]}
+            />
+        ))}
+      </div>
+    ) : (
+      <div class="rapid-sequence-background">
+        <p class="error-message">Nessuna immagine trovata nell'archivio.</p>
+      </div>
+    )}
+
+    <div class="overlay-content">
+      <a href="/" class="top-left-title">GBA</a>
+      <a href="/scanner" class="middle-left-link">Plants Scanner</a>
+      <a href="/collection" class="middle-right-link">Your Collection</a>
+    </div>
+
+  </div>
+</MobileLayout>
 
 <style>
-  /* --- IMPOSTAZIONI GENERALI E TEMA --- */
-  :root {
-    --bg-color: #ffffff;
-    --text-color: #111111;
-    --subtle-text-color: #000000;
-    --border-color: #eaeaea;
-    --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  }
-  
-  html.dark {
-    --bg-color: #111111;
-    --text-color: #eaeaea;
-    --subtle-text-color: #000000;
-    --border-color: #333333;
-  }
-
-  body {
-    font-family: var(--font-main);
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    margin: 0;
-  }
-
-  /* --- GRIGLIA DI IMMAGINI DI SFONDO --- */
-  .landing-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 3rem;
-    padding: 1rem;
-    /* Rimuoviamo l'allineamento specifico per lasciare che i riquadri si allunghino */
-    /* align-items: end; */
-  }
-
-  /* --- STILE DEI SINGOLI ELEMENTI DELLA GRIGLIA --- */
-  .grid-item {
-    /* MODIFICA: Usiamo Flexbox per controllare l'allineamento interno */
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* NUOVO: Contenitore per l'immagine che si espande e centra */
-  .image-container {
-    flex-grow: 1; /* Occupa tutto lo spazio verticale disponibile */
-    display: flex;
-    align-items: center; /* Centra l'immagine verticalmente al suo interno */
-  }
-
-  .grid-item img {
+  /* Contenitore principale che riempie il MobileLayout */
+  .landing-wrapper {
+    position: relative;
     width: 100%;
-    height: auto;
-    display: block;
-  }
-
-  .item-name {
-    display: block;
-    text-align: center;
-    padding: 0.5rem;
-    font-size: 0.8rem;
-    color: var(--subtle-text-color);
-    white-space: nowrap;
+    height: 100%; /* Occupa il 100% dell'altezza del layout */
     overflow: hidden;
-    text-overflow: ellipsis;
+    background-color: #000; /* Sfondo nero se le immagini non caricano */
   }
 
-  /* --- CONTENUTO CENTRALE (TITOLO E BOTTONE) --- */
-  .center-content {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
+  /* Contenitore per le immagini di sfondo */
+  .rapid-sequence-background {
+    position: absolute;
+    inset: 0; /* top/right/bottom/left: 0 */
+    z-index: 1;
+  }
+  .background-image {
+    position: absolute;
+    inset: 0;
+    width: 100%; 
     height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-    text-align: center;
-    pointer-events: none;
+    object-fit: cover; /* Copre tutto lo spazio senza distorcere */
+    opacity: 0;
+    transition: none; /* Nessuna transizione per l'effetto rapido */
   }
-  
-  .main-title {
-    font-size: 1rem; 
-    font-weight: 500;
-    margin: 0;
-    color: var(--text-color);
+  .background-image.is-visible { 
+    opacity: 1; 
   }
 
-  .explore-button {
-    pointer-events: all;
-    margin-top: 0.5rem;
-    text-decoration: none;
-    font-weight: 600;
-    color: var(--text-color);
-    opacity: 0.7;
-    transition: all 0.3s ease;
+  /* Messaggio di errore fallback */
+  .error-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #555;
+    font-family: sans-serif;
   }
 
-  .explore-button:hover {
-    opacity: 3;
+  /* Contenitore per i testi sovrapposti */
+  .overlay-content {
+    position: absolute;
+    inset: 0;
+    z-index: 2; /* Sta sopra lo sfondo */
+    color: white;
+    font-family: monospace;
     
   }
-</style>
-</head>
-<body>
-    <div class="landing-grid">
-        {items.map(item => (
-            <div class="grid-item">
-                <div class="image-container">
-                    <img src={item.image || 'https://via.placeholder.com/200'} alt={item.nome} loading="lazy" />
-                </div>
-                <span class="item-name">{item.nome}</span>
-            </div>
-        ))}
-    </div>
 
-    <div class="center-content">
-        <h1 class="main-title">{titolo}</h1>
-        <a href="/archivio" class="explore-button">ESPLORA</a>
-    </div>
-</body>
-</html>
+  /* Stile comune per i link sovrapposti */
+  .overlay-content a {
+    color: inherit;
+    text-decoration: none;
+    position: absolute; /* Chiave per il posizionamento libero */
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: 0.9rem;
+  
+  }
+
+  /* Link "GBA" in alto a sinistra */
+  .top-left-title {
+    top: 2.5rem;
+    left: 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  /* Link "PLANTS SCANNER" a sinistra, a metà altezza */
+  .middle-left-link {
+    top: 50%;
+    left: 1.5rem;
+    transform: translateY(-50%); /* Centra verticalmente */
+  }
+
+  /* Link "YOUR COLLECTION" a destra, a metà altezza */
+  .middle-right-link {
+    top: 50%;
+    right: 1.5rem;
+    transform: translateY(-50%); /* Centra verticalmente */
+    text-align: right;
+  }
+</style>
+
+<script define:vars={{ imageInterval }}>
+  document.addEventListener('DOMContentLoaded', () => {
+    const images = document.querySelectorAll('.background-image');
+    
+    // Non fare nulla se c'è 1 sola immagine o nessuna
+    if (images.length < 2) return; 
+    
+    let currentIndex = 0;
+    
+    // Assicurati che imageInterval sia un numero valido
+    const intervalTime = typeof imageInterval === 'number' ? imageInterval : 100;
+
+    setInterval(() => {
+      // Bonus: Mette in pausa l'animazione se la finestra non è attiva
+      if (document.hidden) return; 
+      
+      // Nasconde l'immagine corrente
+      images[currentIndex].classList.remove('is-visible');
+      
+      // Calcola la prossima immagine (tornando a 0 se è l'ultima)
+      currentIndex = (currentIndex + 1) % images.length;
+      
+      // Mostra la nuova immagine
+      images[currentIndex].classList.add('is-visible');
+
+    }, intervalTime);
+  });
+</script>

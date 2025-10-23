@@ -1,0 +1,88 @@
+---
+import MobileLayout from '../layouts/MobileLayout.astro';
+
+const personalCollection = [
+  "Aechmea 'Blue Tango'", "Aglaonema 'Silver Queen'", "Anthurium wendlingeri",
+  "Betula pendula Roth", "Billbergia nutans", "Buxus sempervirens",
+  "Cryptanthus 'Black Mystic'", "Dionea o Venere Acchiappamosche", "Dracunculus vulgaris",
+  "Erba Gatta", "Ficus benjamina", "Ginkgo biloba", "Hedera helix", "Ilex aquifolium",
+  "Jasminum nudiflorum", "Laurus nobilis", "Magnolia grandiflora", "Nerium oleander",
+  "Olea europaea", "Punica granatum", "Quercus robur"
+];
+---
+<MobileLayout activePage="personale">
+    <main class="main-content-personal">
+        <h1>Hi Luca, this is your personal plant collection</h1>
+        <p class="subtitle">Here you can find the plants you added during your visit</p>
+
+        <ul class="plant-list">
+            {personalCollection.map(plant => (
+                <li class="plant-item">
+                    <span>{plant}</span>
+                    <svg class="dots-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 13C19.5523 13 20 12.5523 20 12C20 11.4477 19.5523 11 19 11C18.4477 11 18 11.4477 18 12C18 12.5523 18.4477 13 19 13Z" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 13C5.55228 13 6 12.5523 6 12C6 11.4477 5.55228 11 5 11C4.44772 11 4 11.4477 4 12C4 12.5523 4.44772 13 5 13Z" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </li>
+            ))}
+        </ul>
+
+        <a href="/wrapped" class="wrapped-button">
+            Share this experience
+        </a>
+    </main>
+</MobileLayout>
+
+<style>
+    .main-content-personal {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+    .main-content-personal h1 {
+        font-size: 2.8rem;
+        font-weight: 700;
+        line-height: 1.1;
+        margin: 1.5rem 0 0.5rem 0;
+    }
+    .main-content-personal .subtitle {
+        font-size: 1.1rem;
+        color: #888;
+        margin-bottom: 2.5rem;
+    }
+    .plant-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .plant-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid #e5e5e5;
+        font-size: 1.1rem;
+    }
+    .plant-item:last-child {
+        border-bottom: none;
+    }
+    .dots-icon {
+        flex-shrink: 0;
+        margin-left: 1rem;
+    }
+
+    /* --- STILE BOTTONE AGGIORNATO --- */
+    .wrapped-button {
+        display: block;
+        max-width: 320px;      /* Larghezza massima del bottone */
+        width: 90%;            /* Occupa il 90% dello spazio disponibile */
+            /* Centra orizzontalmente */
+        text-align: center;
+        background-color: #619EE9;
+        color: white;
+        padding: 1rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+</style>
