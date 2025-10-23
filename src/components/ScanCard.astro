@@ -1,0 +1,415 @@
+---
+// src/components/ScanCard.astro
+
+// --- AGGIUNTA: Dati copiati da scanner.astro ---
+const plant = {
+    name: "Papiro Egiziano", image: "/papiro-egiziano.jpg",
+    family: "Cyperus papyrus", class: "Liliopsida", subclass: "Commelinidae",
+    order: "Cyperales", genus: "Cyperus",
+    description: "Un popolare ibrido di Aechmea, celebre per la sua infiorescenza unica. Le foglie formano una rosetta verde-grigiastra. Lo stelo fiorale porta brattee di un rosa elettrico da cui si sviluppano fiori di un incredibile colore blu-viola brillante, che creano un contrasto cromatico molto ricercato. Come altre Aechmea, è robusta e monocarpica."
+};
+const plantName = plant.name;
+---
+
+<div id="scan-card-overlay" class="scan-overlay-wrapper">
+    <div class="scan-card-backdrop"></div>
+    
+    <div class="scan-sheet-content">
+        
+        <button id="close-scan-card" class="close-scan-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6L18 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
+        <div class="image-container">
+            <img src={plant.image} alt={plant.name} />
+        </div>
+
+        <div class="title-header">
+            <h2>{plant.name}</h2>
+            <button id="add-to-collection-btn" class="icon-btn plus-icon">
+                <svg class="icon-plus" viewBox="0 0 24 24"><path d="M12 5V19M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <svg class="icon-check" viewBox="0 0 24 24"><path d="M20 6L9 17L4 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+        </div>
+
+        <div class="swipe-container">
+            <div class="swipe-wrapper">
+                <div class="swipe-page">
+                    <dl class="plant-details">
+                        <div><dt>Family</dt><dd>{plant.family}</dd></div>
+                        <div><dt>Class</dt><dd>{plant.class}</dd></div>
+                        <div><dt>Sub Class</dt><dd>{plant.subclass}</dd></div>
+                        <div><dt>Order</dt><dd>{plant.order}</dd></div>
+                        <div><dt>Genere</dt><dd>{plant.genus}</dd></div>
+                    </dl>
+                </div>
+                <div class="swipe-page">
+                    <h3>Description</h3>
+                    <p class="plant-description">{plant.description}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <div class="pagination-container">
+                <span class="dot active" data-index="0"></span>
+                <span class="dot" data-index="1"></span>
+            </div>
+            <a href="/personale" class="collection-link">YOUR COLLECTION (0)</a>
+        </div>
+        
+    </div>
+</div>
+
+<script define:vars={{ plantName }}>
+    // --- Funzioni Helper per il localStorage ---
+    const COLLECTION_KEY = 'gba_collection';
+
+    function getCollection() {
+        const data = localStorage.getItem(COLLECTION_KEY);
+        return data ? JSON.parse(data) : [];
+    }
+    function saveCollection(collection) {
+        localStorage.setItem(COLLECTION_KEY, JSON.stringify(collection));
+    }
+    function addToCollection(name) {
+        const collection = getCollection();
+        if (!collection.includes(name)) {
+            collection.push(name);
+            saveCollection(collection);
+        }
+    }
+    function removeFromCollection(name) {
+        let collection = getCollection();
+        collection = collection.filter(item => item !== name);
+        saveCollection(collection);
+    }
+
+    // --- Logica Specifica di questo Componente ---
+    // NOTA: Questo script viene eseguito ogni volta che 
+    // il componente viene caricato, anche se è nascosto.
+    (function setupScanCard() {
+        // Cerca gli elementi SOLO all'interno di questo componente
+        const overlay = document.getElementById('scan-card-overlay');
+        if (!overlay) return; // Esce se l'overlay non è trovato
+
+        const addBtn = overlay.querySelector('#add-to-collection-btn');
+        const collectionLink = overlay.querySelector('.collection-link');
+        
+        // Se non trova gli elementi, esce per evitare errori
+        if (!addBtn || !collectionLink) {
+            console.error("ScanCard: Elementi 'addBtn' o 'collectionLink' non trovati.");
+            return;
+        }
+
+        // Controlla lo stato INIZIALE della collezione
+        const initialCollection = getCollection();
+        const isInCollection = initialCollection.includes(plantName); 
+        if (isInCollection) {
+            addBtn.classList.add('is-added');
+        }
+        collectionLink.textContent = `YOUR COLLECTION (${initialCollection.length})`;
+        
+        // Evento per AGGIUNGERE/RIMUOVERE
+        addBtn.addEventListener('click', () => { 
+            const isAdded = addBtn.classList.toggle('is-added'); 
+            if (isAdded) {
+                addToCollection(plantName);
+            } else {
+                removeFromCollection(plantName);
+            }
+            const collection = getCollection();
+            collectionLink.textContent = `YOUR COLLECTION (${collection.length})`;
+        });
+
+        // --- LOGICA SWIPE ORIZZONTALE (copiata da scanner.astro) ---
+        const swipeContainer = overlay.querySelector('.swipe-container');
+        const swipeWrapper = overlay.querySelector('.swipe-wrapper');
+        const pages = overlay.querySelectorAll('.swipe-page');
+        const dots = overlay.querySelectorAll('.pagination-container .dot');
+
+        // Controlli di sicurezza
+        if (!swipeContainer || !swipeWrapper || pages.length === 0 || dots.length === 0) {
+             console.error("ScanCard: Elementi dello slider non trovati.");
+             return;
+        }
+
+        const pageCount = pages.length;
+        let currentPage = 0;
+        let startX = 0;
+        let isContentDragging = false;
+        function updateSlider() { 
+            swipeWrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)'; 
+            swipeWrapper.style.transform = `translateX(-${currentPage * 100}%)`;
+            dots.forEach((dot, index) => { dot.classList.toggle('active', index === currentPage); });
+        }
+        function handleContentStart(clientX) { 
+            isContentDragging = true; startX = clientX; swipeWrapper.style.transition = 'none'; 
+        }
+        function handleContentMove(clientX) { 
+            if (!isContentDragging) return;
+            const diffX = clientX - startX;
+            const baseTranslate = -currentPage * swipeContainer.offsetWidth;
+            swipeWrapper.style.transform = `translateX(${baseTranslate + diffX}px)`;
+        }
+        function handleContentEnd(clientX) { 
+            if (!isContentDragging) return; isContentDragging = false;
+            const diffX = clientX - startX;
+            const threshold = swipeContainer.offsetWidth / 4; 
+            if (Math.abs(diffX) > threshold) {
+                if (diffX < 0 && currentPage < pageCount - 1) { currentPage++; }
+                else if (diffX > 0 && currentPage > 0) { currentPage--; }
+            }
+            updateSlider(); 
+        }
+        swipeContainer.addEventListener('touchstart', (e) => handleContentStart(e.touches[0].clientX), { passive: true });
+        swipeContainer.addEventListener('touchmove', (e) => handleContentMove(e.touches[0].clientX), { passive: true });
+        swipeContainer.addEventListener('touchend', (e) => handleContentEnd(e.changedTouches[0].clientX));
+        swipeContainer.addEventListener('mousedown', (e) => handleContentStart(e.clientX));
+        swipeContainer.addEventListener('mousemove', (e) => handleContentMove(e.clientX));
+        swipeContainer.addEventListener('mouseup', (e) => handleContentEnd(e.clientX));
+        swipeContainer.addEventListener('mouseleave', () => { if (isContentDragging) handleContentEnd(startX); });
+        
+        updateSlider();
+
+    })(); // Esegue la funzione immediatamente
+</script>
+
+
+<style>
+    /* --- CSS di Base (da ScanCard originale) --- */
+    .scan-overlay-wrapper {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+    }
+    .scan-overlay-wrapper.is-visible {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transition: opacity 0.3s ease, visibility 0s linear 0s;
+    }
+
+    .scan-card-backdrop {
+        position: absolute;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.4);
+        cursor: pointer;
+    }
+
+    .scan-sheet-content {
+        width: 100%;
+        background-color: #000;
+        color: white;
+        border-radius: 25px 25px 0 0;
+        padding: 1.5rem;
+        /* --- MODIFICA: Aggiunto padding-top per
+           fare spazio al pulsante X (come il vecchio drag-handle) --- */
+        padding-top: 40px; 
+        box-sizing: border-box;
+        transform: translateY(100%);
+        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        position: relative;
+        z-index: 1;
+        max-height: 90vh; /* Impedisce alla card di essere troppo alta */
+        
+        /* --- AGGIUNTA: Permette lo scroll del contenuto se non ci sta --- */
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; 
+    }
+
+    .scan-overlay-wrapper.is-visible .scan-sheet-content {
+        transform: translateY(0);
+    }
+
+    .close-scan-btn {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background-color: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        z-index: 10;
+    }
+
+    /* --- AGGIUNTA: CSS del Contenuto (da scanner.astro) --- */
+    .image-container { 
+        position: relative; 
+        border-radius: 20px; 
+        overflow: hidden; 
+        flex-shrink: 0; 
+    }
+    .image-container img { 
+        width: 100%; 
+        display: block; 
+    }
+    .title-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin: 1.5rem 0; 
+        flex-shrink: 0; 
+    }
+    h2 { 
+        text-align: left; 
+        margin: 0; 
+        font-size: 1.5rem; 
+        font-weight: 600; 
+        color: white; 
+    }
+    .plus-icon { 
+        position: relative; 
+        top: 0; 
+        right: 0; 
+        background-color: transparent; 
+        border: none; 
+        width: 40px; 
+        height: 40px; 
+    }
+    .plus-icon.is-added { 
+        background-color: transparent; 
+    }
+    
+    /* Stili Swipe */
+    .swipe-container { 
+        width: 100%; 
+        overflow: hidden; 
+        flex-grow: 1; 
+        position: relative; 
+    }
+    .swipe-wrapper { 
+        display: flex; 
+        width: 200%; 
+        height: 100%; 
+    }
+    .swipe-page { 
+        width: 50%; 
+        height: 100%; 
+        flex-shrink: 0; 
+        box-sizing: border-box; 
+        padding: 0 0.2rem; 
+        overflow-y: auto; 
+        scrollbar-width: none; 
+        -ms-overflow-style: none; 
+    }
+    .swipe-page::-webkit-scrollbar { 
+        display: none; 
+    }
+
+    /* Stili Dettagli (compatti) */
+    .plant-details { 
+        font-size: 0.9rem; 
+    }
+    .plant-details div { 
+        display: flex; 
+        justify-content: space-between; 
+        padding: 0.4rem 0; 
+        border-bottom: 1px solid #222; 
+    }
+    .plant-details div:last-child { 
+        border-bottom: none; 
+    }
+    .plant-details dt { 
+        color: #fff; 
+        font-weight: 600; 
+    }
+    .plant-details dd { 
+        margin: 0; 
+        color: #8e8e93; 
+        font-weight: 500; 
+    }
+    .swipe-page h3 { 
+        font-size: 1rem; 
+        font-weight: 600; 
+        color: #fff; 
+        margin-bottom: 0.5rem; 
+    }
+    .plant-description { 
+        font-size: 0.95rem; 
+        line-height: 1.6; 
+        color: #eee; 
+        margin: 0; 
+    }
+
+    /* Stili Footer */
+    .card-footer { 
+        position: relative; 
+        display: flex; 
+        justify-content: flex-end; 
+        align-items: center; 
+        margin-top: auto; 
+        padding: 1.5rem 0 1rem 0; 
+        flex-shrink: 0; 
+    }
+    .pagination-container { 
+        position: absolute; 
+        left: 50%; 
+        transform: translateX(-50%); 
+        display: flex; 
+        gap: 8px; 
+    }
+    .collection-link { 
+        color: white; 
+        text-decoration: none; 
+        font-weight: 600; 
+        font-size: 0.9rem; 
+    }
+    .dot { 
+        width: 8px; 
+        height: 8px; 
+        border-radius: 50%; 
+        background-color: #555; 
+        transition: background-color 0.4s ease;
+    }
+    .dot.active { 
+        background-color: #619EE9; 
+    }
+    .icon-btn { 
+        border: none; 
+        border-radius: 50%; 
+        width: 32px; 
+        height: 32px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        cursor: pointer; 
+        font-weight: bold; 
+        color: white; 
+    }
+    
+    /* Animazione Bottone +/✓ */
+    .plus-icon svg { 
+        position: absolute; 
+        transition: transform 0.4s ease, opacity 0.4s ease; 
+    }
+    .icon-plus { 
+        opacity: 1; 
+        transform: rotate(0deg) scale(1); 
+    }
+    .icon-check { 
+        opacity: 0; 
+        transform: scale(0.5); 
+    }
+    .plus-icon.is-added .icon-plus { 
+        opacity: 0; 
+        transform: rotate(180deg) scale(0.5); 
+    }
+    .plus-icon.is-added .icon-check { 
+        opacity: 1; 
+        transform: scale(1) rotate(360deg); 
+    }
+</style>

@@ -1,0 +1,204 @@
+---
+// src/pages/urbino.astro
+import MobileLayout from '../layouts/MobileLayout.astro';
+
+// Dati d'esempio per la pagina
+const location = {
+    name: "Urbino Botanical Garden", 
+    city: "Urbino", 
+    country: "Italy", 
+    coord1: "43°43'38.86\"N", 
+    coord2: "12°38'11.98\"E"
+};
+---
+<MobileLayout>
+  <div class="page-wrapper-urbino">
+    
+    <div class="header-section">
+      <header class="page-header">
+        <a href="/" class="header-link top-left">GBA</a>
+        <div class="header-link top-right">
+          <a href="/personale" class="header-link-item">YOUR</a>
+          <a href="/locations" class="header-link-item">LOCATION</a>
+        </div>
+      </header>
+
+      <div class="title-section">
+        <h1>{location.name}</h1>
+        <div class="sub-header">
+          <span>{location.city}, {location.country}</span>
+          <div class="coords">
+            <span>{location.coord1}</span>
+            <span>{location.coord2}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <main class="main-content">
+      
+      <div class="download-section">
+        <h3>HELLO LUCA,<br>DOWNLOAD THE URBINO'S BOTANICAL GARDEN ARCHIVE</h3>
+        <div class="download-link-wrapper">
+          <p>Download a pdf with all the species present in the garden</p>
+         <a href="/archivio_urbino.pdf" class="download-btn" download>DOWNLOAD NOW</a>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <p>From 3rd March to 28th November</p>
+        <p>Monday–Friday<br>8.30–13.30</p>
+        <p>Free entry</p>
+      </div>
+
+      <footer class="page-footer">
+        <a href="/scanner" class="footer-link">PLANTS SCANNER</a>
+        <a href="/personale" class="footer-link">YOUR COLLECTION</a>
+      </footer>
+
+    </main>
+  </div>
+</MobileLayout>
+
+<style>
+  .page-wrapper-urbino {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  /* --- Sezione Superiore (Bianca) --- */
+  .header-section {
+    background-color: #ffffff;
+    color: #000000;
+    border-bottom: 1px solid #eee;
+  }
+  .page-header {
+    position: relative;
+    padding: 2.5rem 1.5rem;
+    height: 1.2rem; /* Altezza fissa per l'header */
+  }
+  .header-link {
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    position: absolute;
+    z-index: 10;
+  }
+  .top-left {
+    top: 2.5rem;
+    left: 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #000;
+  }
+  .top-right {
+    top: 2.5rem;
+    right: 1.5rem;
+    display: flex;
+    gap: 0.5rem; /* Spazio tra "YOUR" e "LOCATION" */
+  }
+  .header-link-item {
+    text-decoration: none;
+    color: #000; /* Nero come da screenshot */
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  /* Titolo e coordinate */
+  .title-section {
+    padding: 1.5rem;
+    padding-top: 1rem;
+    background: #fff;
+  }
+  h1 {
+    font-size: 1.8rem; /* Più grande */
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    color: #000;
+  }
+  .sub-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    color: #666;
+    font-size: 0.9rem;
+  }
+  .coords {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 0.9rem;
+    color: #666;
+    flex-shrink: 0;
+    padding-left: 1rem;
+  }
+
+  /* --- Sezione Inferiore (Nera) --- */
+  .main-content {
+    flex-grow: 1; /* Occupa tutto lo spazio rimanente */
+    background: #000;
+    color: #fff;
+    padding: 2.5rem 1.5rem;
+    position: relative;
+    /* Spazio in basso per il footer fisso */
+    padding-bottom: 8rem; 
+  }
+  .download-section h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0 0 1rem 0;
+  }
+  .download-link-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #333;
+    border-bottom: 1px solid #333;
+    padding: 1rem 0;
+  }
+  .download-link-wrapper p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #999;
+    max-width: 60%;
+    line-height: 1.4;
+  }
+  .download-btn {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+  
+  .info-section {
+    margin-top: 2.5rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  .info-section p {
+    margin: 0 0 1.2rem 0;
+  }
+
+  /* Footer (diverso da 'personale.astro') */
+  .page-footer {
+    position: absolute; /* Ancorato al .main-content nero */
+    bottom: 2.5rem;
+    left: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    z-index: 10;
+  }
+  .footer-link {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+  }
+</style>

@@ -1,88 +1,71 @@
 ---
 // src/pages/wrapped.astro
-// Nessun layout necessario
+import MobileLayout from '../layouts/MobileLayout.astro';
 ---
-<html lang="it">
-<head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Your 2025 Wrapped</title>
-</head>
-<body>
-    <div class="wrapped-container">
-        {/* Back Arrow Link */}
-        <a href="/personale" class="back-arrow-link" aria-label="Go back to Personal Collection">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M19 12H5M5 12L11 18M5 12L11 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </a>
+<MobileLayout>
+  <div class="page-wrapper">
+    
+    <a href="/" class="header-link top-left">GBA</a>
+    <a href="/personale" class="header-link top-right-back" aria-label="Torna alla collezione">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6L18 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </a>
 
-        <header class="wrapped-header">
-            GLOBAL BOTANIC ARCHIVE
-        </header>
+    <div class="corner-plus top-left-plus">+</div>
+    <div class="corner-plus top-right-plus">+</div>
+    <div class="corner-plus bottom-left-plus">+</div>
+    <div class="corner-plus bottom-right-plus">+</div>
 
-        <main class="wrapped-content">
-            <div id="card-to-download" class="summary-card">
-                <div class="image-overlay-wrapper">
-                    {/* Contenitore che scorrerà */}
-                    <div class="image-slider-wrapper">
-                        {/* Immagini */}
-                        <div class="image-slide"><img src="/papiro-egiziano.jpg" alt="Papiro Egiziano" class="featured-image"/></div>
-                        <div class="image-slide"><img src="/fiore-colorato.jpg" alt="Fiore Colorato" class="featured-image"/></div>
-                        <div class="image-slide"><img src="/albero-rigoglioso.jpg" alt="Albero Rigoglioso" class="featured-image"/></div>
-                        <div class="image-slide"><img src="/pianta-grassa.jpg" alt="Pianta Grassa" class="featured-image"/></div>
-                    </div>
-                    
-                    {/* Testi Sovrapposti (Nuova Struttura) */}
-                    <div class="overlay-text overlay-top-left">
-                        Orto Botanico<br>
-                        Urbino, Italy
-                    </div>
-                    <div class="overlay-text overlay-top-right">
-                        25 • 10 • 2025<br>
-                        18°C
-                    </div>
-                    <div class="overlay-text overlay-bottom-center">
-                        You saw <span class="highlight">67 plants</span>
-                    </div>
-
-                </div>
+    <main class="content-area">
+        <div id="card-to-download" class="wrapped-card">
+            
+            <div class="image-slider-wrapper">
+                <div class="image-slide"><img src="/papiro-egiziano.jpg" alt="Papiro Egiziano" class="featured-image"/></div>
+                <div class="image-slide"><img src="/fiore-colorato.jpg" alt="Fiore Colorato" class="featured-image"/></div>
+                <div class="image-slide"><img src="/albero-rigoglioso.jpg" alt="Albero Rigoglioso" class="featured-image"/></div>
+                <div class="image-slide"><img src="/pianta-grassa.jpg" alt="Pianta Grassa" class="featured-image"/></div>
             </div>
-
-            <button id="open-share-overlay" class="share-button-wrapped">
-                Share
-            </button>
-        </main>
-
-        {/* Overlay Condivisione (invariato) */}
-        <div id="share-overlay" class="share-overlay">
-            <div class="share-backdrop"></div>
-            <div class="share-sheet">
-                <button id="close-share-overlay" class="close-share-btn">
-                    <svg width="24" height="24" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6L18 18" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </button>
-                <div class="share-header-action"><h2 class="share-title">Share <br>with friends</h2></div>
-                <p class="share-to-label">Share to</p>
-                <div class="social-icons">
-                    <a href="mailto:?subject=My%20Visit%20to%20Urbino's%20Botanical%20Garden&body=I%20had%20so%20much%20fun%20at%20the%20Urbino's%20Botanical%20Garden!%0A%0A(Don't%20forget%20to%20attach%20the%20image!)" class="social-item-link"><div class="social-item"><img src="/icons/mail.svg" alt="Mail" class="social-icon mail-icon"><span>Mail</span></div></a>
-                    <div class="social-item"><img src="/icons/instagram.svg" alt="Instagram" class="social-icon"><span>Instagram</span></div>
-                    <div class="social-item"><img src="/icons/whatsapp.svg" alt="Whatsapp" class="social-icon"><span>Whatsapp</span></div>
-                    <button id="save-card-btn" class="social-item-button"><div class="social-item"><img src="/icons/save.svg" alt="Save Image" class="social-icon save-icon"><span>Save</span></div></button>
-                </div>
+            
+            <div class="overlay-text overlay-top-left">
+                Orto Botanico<br>
+                Urbino, Italy
+            </div>
+            <div class="overlay-text overlay-top-right">
+                25 • 10 • 2025<br>
+                18°C
+            </div>
+            <div class="overlay-text overlay-bottom-center">
+                You saw <span class="highlight">67 plants</span>
             </div>
         </div>
-        {/* FINE OVERLAY */}
+    </main>
+
+    <a id="open-share-overlay" class="share-link">SHARE</a>
+
+    <div id="share-overlay" class="share-overlay">
+        <div class="share-backdrop"></div>
+        <div class="share-sheet">
+            <button id="close-share-overlay" class="close-share-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6L18 18" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="share-header-action"><h2 class="share-title">Share <br>with friends</h2></div>
+            <p class="share-to-label">Share to</p>
+            <div class="social-icons">
+                <a href="mailto:?subject=My%20Visit%20to%20Urbino's%20Botanical%20Garden&body=I%20had%20so%20much%20fun%20at%20the%20Urbino's%20Botanical%20Garden!%0A%0A(Don't%20forget%20to%20attach%20the%20image!)" class="social-item-link"><div class="social-item"><img src="/icons/mail.svg" alt="Mail" class="social-icon mail-icon"><span>Mail</span></div></a>
+                <div class="social-item"><img src="/icons/instagram.svg" alt="Instagram" class="social-icon"><span>Instagram</span></div>
+                <div class="social-item"><img src="/icons/whatsapp.svg" alt="Whatsapp" class="social-icon"><span>Whatsapp</span></div>
+                <button id="save-card-btn" class="social-item-button"><div class="social-item"><img src="/icons/save.svg" alt="Save Image" class="social-icon save-icon"><span>Save</span></div></button>
+            </div>
+        </div>
     </div>
-</body>
-</html>
+  </div>
+</MobileLayout>
 
 <script>
     import html2canvas from 'html2canvas';
 
     document.addEventListener('DOMContentLoaded', () => {
-        // ... (JavaScript rimane invariato) ...
         // Elementi overlay condivisione
         const openShareButton = document.getElementById('open-share-overlay');
         const closeShareButton = document.getElementById('close-share-overlay');
@@ -162,63 +145,118 @@
 </script>
 
 <style>
-    /* Stili globali, container, freccia, header, content (invariati) */
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #d1d1d6; color: white; min-height: 100vh; padding-top: 50px; padding-bottom: 50px; box-sizing: border-box; }
-    .wrapped-container { width: 390px; height: 844px; background-color: #1C1C1E; border-radius: 40px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); position: relative; display: flex; flex-direction: column; overflow: hidden; margin: 0 auto; }
-    .back-arrow-link { position: absolute; top: 20px; left: 20px; z-index: 10; padding: 5px; display: flex; align-items: center; justify-content: center; }
-    .back-arrow-link svg { width: 30px; height: 30px; }
-    .back-arrow-link svg path { stroke: #ffffff; }
-    .wrapped-header { text-align: center; padding: 1.5rem 0; padding-top: 2rem; font-size: 0.8rem; font-weight: 600; letter-spacing: 1px; color: #ffffff; flex-shrink: 0; position: relative; }
-    .wrapped-content { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1rem; box-sizing: border-box; }
+    /* --- NUOVO LAYOUT --- */
+    .page-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100vh; /* /* --- CORREZIONE: 100vh previene lo scroll verticale --- */
+        background: #000;
+        color: white;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        overflow: hidden;
+    }
+    .header-link {
+        position: absolute;
+        top: 2.5rem;
+        z-index: 10;
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+    }
+    .top-left {
+        left: 1.5rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+    .top-right-back {
+        right: 1.5rem;
+    }
+    .corner-plus {
+        position: absolute;
+        color: white;
+        font-size: 2rem;
+        font-weight: 200; /* Sottile */
+        z-index: 5;
+    }
+    .top-left-plus { top: 3.5rem; left: 3.5rem; }
+    .top-right-plus { top: 3.5rem; right: 3.5rem; }
+    .bottom-left-plus { bottom: 3.5rem; left: 3.5rem; }
+    .bottom-right-plus { bottom: 3.5rem; right: 3.5rem; }
 
-    /* Stili Summary Card - Dimensioni aggiornate */
-    .summary-card {
-        background-color: #000000; border-radius: 25px;
-        width: 338px; height: 601px;
-        max-width: 100%;
-        overflow: hidden; margin-bottom: 2rem; position: relative; display: flex;
+    /* --- MODIFICA --- */
+    .content-area {
+        position: absolute;
+        top: 3.5rem;
+        bottom: 3.5rem;
+        left: 3.5rem;
+        right: 3.5rem;
+    }
+
+    .share-link {
+        position: absolute;
+        bottom: 2.5rem;
+        right: 1.5rem;
+        z-index: 10;
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        cursor: pointer;
+    }
+
+    /* --- VECCHIO CSS (ADATTATO) --- */
+
+    /* Card da scaricare (vecchio .summary-card) */
+    /* --- MODIFICA --- */
+    .wrapped-card {
+        background-color: #000000; 
+        border-radius: 0; /* --- CORREZIONE: Rimossi angoli arrotondati --- */
+        width: 100%;
+        height: 100%;
+        overflow: hidden; 
+        position: relative;
+        display: flex;
         cursor: grab;
     }
-    .summary-card:active { cursor: grabbing; }
+    .wrapped-card:active { cursor: grabbing; }
 
-    /* Stili Slider Immagine (invariati) */
+    /* Slider (da vecchio codice) */
     .image-overlay-wrapper { width: 100%; height: 100%; position: relative; overflow: hidden; }
     .image-slider-wrapper { display: flex; height: 100%; }
     .image-slide { width: 100%; height: 100%; flex-shrink: 0; }
     .featured-image { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; -webkit-user-drag: none; }
 
-    /* ▼▼▼ NUOVI STILI TESTI OVERLAY ▼▼▼ */
+    /* Testi Overlay (aggiornati al NUOVO stile) */
      .overlay-text {
-        position: absolute; color: white; padding: 1rem;
-        font-size: 0.9rem; line-height: 1.4;
-        pointer-events: none; user-select: none;
+        position: absolute; 
+        color: white; 
+        padding: 1.5rem;
+        font-size: 0.8rem;
+        line-height: 1.4;
+        pointer-events: none; 
+        user-select: none;
+        font-weight: 500;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
     }
     .overlay-top-left {
         top: 0; left: 0; text-align: left;
-        line-height: 0.8rem;
-        font-weight: 500; font-size: 0.8rem;
-        transform: translateY(275px);
-
-
     }
     .overlay-top-right {
         top: 0; right: 0; text-align: right;
-        font-weight: 500; font-size: 0.8rem;
-        line-height: 0.8rem;
-        transform: translateY(275px);
     }
     .overlay-bottom-center {
         bottom: 0; left: 0; right: 0; text-align: center;
-        padding-bottom: 1.5rem; font-size: 1.3rem; font-weight: 500;
+        padding-bottom: 1.5rem; 
+        font-size: 1.3rem;
+        font-weight: 500;
     }
     .overlay-bottom-center .highlight { font-weight: bold; }
-     /* ▲▲▲ FINE NUOVI STILI TESTI ▲▲▲ */
 
-    .share-button-wrapped { background-color: #619EE9; color: white; border: none; border-radius: 50px; padding: 1rem 0; font-size: 1rem; font-weight: 600; cursor: pointer; width: 80%; max-width: 280px; transition: background-color 0.3s ease; }
-    .share-button-wrapped:hover { background-color: #4A8ED8; }
-
-    /* Stili Overlay Condivisione (invariati) */
-    .share-overlay { position: absolute; inset: 0; z-index: 1000; display: flex; justify-content: center; align-items: flex-end; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.3s ease, visibility 0s linear 0.3s; }
+    /* Overlay Condivisione (da vecchio codice) */
+    .share-overlay { position: fixed; inset: 0; z-index: 1000; display: flex; justify-content: center; align-items: flex-end; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.3s ease, visibility 0s linear 0.3s; }
     .share-overlay.is-visible { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity 0.3s ease, visibility 0s linear 0s; }
     .share-backdrop { position: absolute; inset: 0; background-color: rgba(0, 0, 0, 0.4); }
     .share-sheet { width: 100%; background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); color: #1C1C1E; border-radius: 25px 25px 0 0; padding: 1.5rem; box-sizing: border-box; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); padding-bottom: 3rem; position: relative; z-index: 1; }

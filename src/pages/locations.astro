@@ -1,0 +1,183 @@
+---
+// src/pages/locations.astro
+import MobileLayout from '../layouts/MobileLayout.astro';
+
+// Dati d'esempio basati sul tuo screenshot
+const locations = [
+  { 
+    name: "Padua Botanical Garden", 
+    city: "Padua", 
+    country: "Italy", 
+    coord1: "43°43'38.86\"N", 
+    coord2: "12°38'11.98\"E",
+    isClickable: false 
+  },
+  { 
+    name: "Urbino Botanical Garden", 
+    city: "Urbino", 
+    country: "Italy", 
+    coord1: "43°43'38.86\"N", 
+    coord2: "12°38'11.98\"E",
+    isClickable: true, // <-- Reso cliccabile
+    href: "/urbino"// <-- Cambia questo con il link desiderato
+  },
+  { 
+    name: "Kirstenbosch Garden", 
+    city: "Cape Town", 
+    country: "South Africa", 
+    coord1: "43°43'38.86\"N", 
+    coord2: "12°38'11.98\"E",
+    isClickable: false 
+  },
+  { 
+    name: "Giardini Botanici Hanbury", 
+    city: "Ventimiglia", 
+    country: "Liguria", 
+    coord1: "43°43'38.86\"N", 
+    coord2: "12°38'11.98\"E",
+    isClickable: false 
+  },
+  { 
+    name: "Orto Botanico di Brera", 
+    city: "Milan", 
+    country: "Italy", 
+    coord1: "43°43'38.86\"N", 
+    coord2: "12°38'11.98\"E",
+    isClickable: false 
+  },
+  { 
+    name: "Singapore Botanic Garden", 
+    city: "Singapore", 
+    country: "", 
+    coord1: "43°43'38.86\"N", 
+    coord2: "12°38'11.98\"E",
+    isClickable: false 
+  },
+  // ...aggiungi gli altri se vuoi
+];
+---
+<MobileLayout>
+  <div class="page-wrapper-locations">
+    
+    <header class="page-header">
+      <a href="/" class="header-link top-left">GBA</a>
+      <span class="header-link top-right">YOUR LOCATION</span>
+    </header>
+
+    <main class="locations-list">
+      {locations.map(loc => (
+        loc.isClickable ? (
+          <a href={loc.href} class="location-item clickable">
+            <div class="item-details">
+              <h2 class="item-name">{loc.name}</h2>
+              <span class="item-city">{loc.city}{loc.country && `, ${loc.country}`}</span>
+            </div>
+            <div class="item-coords">
+              <span>{loc.coord1}</span>
+              <span>{loc.coord2}</span>
+            </div>
+          </a>
+        ) : (
+          <div class="location-item">
+            <div class="item-details">
+              <h2 class="item-name">{loc.name}</h2>
+              <span class="item-city">{loc.city}{loc.country && `, ${loc.country}`}</span>
+            </div>
+            <div class="item-coords">
+              <span>{loc.coord1}</span>
+              <span>{loc.coord2}</span>
+            </div>
+          </div>
+        )
+      ))}
+    </main>
+
+  </div>
+</MobileLayout>
+
+<style>
+  .page-wrapper-locations {
+    position: relative;
+    width: 100%;
+    min-height: 100%;
+    background-color: #ffffff; /* Sfondo bianco */
+    color: #000000; /* Testo nero */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  /* --- Header --- */
+  .page-header {
+    position: relative;
+    padding: 2.5rem 1.5rem;
+    border-bottom: 1px solid #eee;
+  }
+  .header-link {
+    text-decoration: none;
+    color: #555;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    position: absolute;
+    z-index: 10;
+  }
+  .top-left {
+    top: 2.5rem;
+    left: 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #000;
+  }
+  .top-right {
+    top: 2.5rem;
+    right: 1.5rem;
+    color: #000; /* Testo nero come da screenshot */
+  }
+
+  /* --- Lista Location --- */
+  .locations-list {
+    padding: 0;
+  }
+  .location-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1.5rem;
+    border-bottom: 1px solid #eee;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .location-item.clickable {
+    /* Puoi aggiungere uno stile per far capire che è cliccabile */
+    cursor: pointer;
+  }
+  .location-item.clickable:hover {
+    background-color: #f9f9f9;
+  }
+
+  .item-details {
+    display: flex;
+    flex-direction: column;
+  }
+  .item-name {
+    font-size: 1.5rem; /* Più grande */
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+    color: #000;
+  }
+  .item-city {
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  .item-coords {
+    font-size: 0.9rem;
+    color: #666;
+    text-align: right;
+    flex-shrink: 0;
+    padding-left: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+</style>
