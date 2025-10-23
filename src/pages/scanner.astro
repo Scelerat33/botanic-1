@@ -84,13 +84,13 @@ const plantName = plant.name;
 
     // Prende la collezione dal localStorage (o restituisce un array vuoto)
     function getCollection() {
-        const data = localStorage.getItem(COLLECTION_KEY);
+        const data = sessionStorage.getItem(COLLECTION_KEY);
         return data ? JSON.parse(data) : [];
     }
 
     // Salva la collezione nel localStorage
     function saveCollection(collection) {
-        localStorage.setItem(COLLECTION_KEY, JSON.stringify(collection));
+        sessionStorage.setItem(COLLECTION_KEY, JSON.stringify(collection));
     }
 
     // Aggiunge un nome di pianta alla collezione
@@ -344,15 +344,17 @@ const plantName = plant.name;
         overflow: hidden; 
         flex-shrink: 0; 
     }
-    .image-container img { 
+  .image-container img { 
         width: 100%; 
         display: block; 
+        max-height: 30vh;   /* <-- AGGIUNTA: Limita l'altezza dell'immagine */
+        object-fit: cover;  /* <-- AGGIUNTA: Mantiene le proporzioni */
     }
     .title-header { 
         display: flex; 
         justify-content: space-between; 
         align-items: center; 
-        margin: 1.5rem 0; 
+        margin: 1rem 0; 
         flex-shrink: 0; 
     }
     h2 { 
@@ -394,7 +396,7 @@ const plantName = plant.name;
         flex-shrink: 0; 
         box-sizing: border-box; 
         padding: 0 0.2rem; 
-        overflow-y: auto; 
+        overflow-y: hidden; 
         scrollbar-width: none; 
         -ms-overflow-style: none; 
     }
@@ -444,7 +446,7 @@ const plantName = plant.name;
         justify-content: flex-end; 
         align-items: center; 
         margin-top: auto; 
-        padding: 1.5rem 0 1rem 0; 
+        padding: 1rem 0 0.5rem 0; 
         flex-shrink: 0; 
     }
     .pagination-container { 

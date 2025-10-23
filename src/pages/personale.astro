@@ -52,7 +52,7 @@ import ScanCard from '../components/ScanCard.astro'; // <-- CORREZIONE: Rimosso 
     const COLLECTION_KEY = 'gba_collection';
 
     function getCollection() {
-        const data = localStorage.getItem(COLLECTION_KEY);
+        const data = sessionStorage.getItem(COLLECTION_KEY); // <-- CORRETTO: Legge da sessionStorage
         return data ? JSON.parse(data) : [];
     }
 
