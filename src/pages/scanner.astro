@@ -1,5 +1,4 @@
 ---
-// src/pages/scanner.astro
 import MobileLayout from '../layouts/MobileLayout.astro';
 
 // Dati della pianta
@@ -10,16 +9,20 @@ const plant = {
     description: "Un popolare ibrido di Aechmea, celebre per la sua infiorescenza unica. Le foglie formano una rosetta verde-grigiastra. Lo stelo fiorale porta brattee di un rosa elettrico da cui si sviluppano fiori di un incredibile colore blu-viola brillante, che creano un contrasto cromatico molto ricercato. Come altre Aechmea, è robusta e monocarpica."
 };
 
-// ======================================================
-// ECCO LA RIGA CHE MANCAVA NEL FRONTMATTER
-// ======================================================
 const plantName = plant.name;
 ---
 <MobileLayout activePage="camera">
+
+    <header class="mobile-header theme-dark" transition:persist>
+      <a href="/" class="mobile-header-logo" transition:name="logo-gba">GBA</a>
+      <div class="mobile-header-right">
+        <span>PLANTS SCANNER</span>
+      </div>
+    </header>
     
     <main class="main-content-camera">
         <div class="camera-overlay-content">
-            <p>Scan the qr code <br>to access the plant's <br> information.</p>
+            <p>Move around <br> and scan a plant</p>
             <button id="scan-btn" class="scan-target-icon">
                 <svg viewBox="0 0 67 67" fill="none"><path d="M33.5 58.625V33.5M33.5 58.625L41.875 50.25M33.5 58.625L25.125 50.25M33.5 33.5V8.375M33.5 33.5H8.375M33.5 33.5H58.625M33.5 8.375L25.125 16.75M33.5 8.375L41.875 16.75M8.375 33.5L16.75 41.875M8.375 33.5L16.75 25.125M58.625 33.5L50.25 25.125M58.625 33.5L50.25 41.875" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
@@ -79,21 +82,16 @@ const plantName = plant.name;
 </MobileLayout>
 
 <script define:vars={{ plantName }}>
-    // --- Funzioni Helper per il localStorage ---
+    // --- Funzioni Helper per il sessionStorage ---
     const COLLECTION_KEY = 'gba_collection';
 
-    // Prende la collezione dal localStorage (o restituisce un array vuoto)
     function getCollection() {
         const data = sessionStorage.getItem(COLLECTION_KEY);
         return data ? JSON.parse(data) : [];
     }
-
-    // Salva la collezione nel localStorage
     function saveCollection(collection) {
         sessionStorage.setItem(COLLECTION_KEY, JSON.stringify(collection));
     }
-
-    // Aggiunge un nome di pianta alla collezione
     function addToCollection(name) {
         const collection = getCollection();
         if (!collection.includes(name)) {
@@ -101,8 +99,6 @@ const plantName = plant.name;
             saveCollection(collection);
         }
     }
-
-    // Rimuove un nome di pianta dalla collezione
     function removeFromCollection(name) {
         let collection = getCollection();
         collection = collection.filter(item => item !== name);
@@ -110,137 +106,214 @@ const plantName = plant.name;
     }
 
     // --- Logica Principale ---
-    document.addEventListener('DOMContentLoaded', () => {
+    // !!! --- MODIFICA QUI --- !!!
+    // Sostituito 'DOMContentLoaded' con 'astro:page-load'
+    document.addEventListener('astro:page-load', () => {
         const scanBtn = document.getElementById('scan-btn');
         const overlay = document.getElementById('plant-overlay');
         const addBtn = document.getElementById('add-to-collection-btn');
         const collectionLink = document.querySelector('.collection-link');
 
-        // Controlla lo stato INIZIALE della collezione all'avvio
-        // Ora 'plantName' è definita grazie a 'define:vars'
+        // Controlli per evitare errori se gli elementi non esistono
+        if (!scanBtn || !overlay || !addBtn || !collectionLink) {
+             console.error("Elementi UI scanner non trovati");
+             return;
+        }
+
         const initialCollection = getCollection();
         const isInCollection = initialCollection.includes(plantName); 
 
-        // Imposta il bottone e il contatore allo stato corretto
         if (isInCollection) {
             addBtn.classList.add('is-added');
         }
         collectionLink.textContent = `YOUR COLLECTION (${initialCollection.length})`;
-
         
-        // Evento per APRIRE la card
         scanBtn.addEventListener('click', () => { 
             overlay.classList.add('is-visible'); 
         });
         
-        // Evento per AGGIUNGERE/RIMUOVERE
         addBtn.addEventListener('click', () => { 
             const isAdded = addBtn.classList.toggle('is-added'); 
             
             if (isAdded) {
-                // Aggiungi al localStorage
                 addToCollection(plantName);
             } else {
-                // Rimuovi dal localStorage
                 removeFromCollection(plantName);
             }
             
-            // Aggiorna il contatore in base alla lunghezza REALE della collezione
             const collection = getCollection();
             collectionLink.textContent = `YOUR COLLECTION (${collection.length})`;
         });
-
-        // --- Tutta la logica di SWIPE e DRAG resta invariata ---
         
-        // --- LOGICA SWIPE ORIZZONTALE (invariata) ---
+        // --- LOGICA SWIPE ORIZZONTALE ---
         const swipeContainer = overlay.querySelector('.swipe-container');
         const swipeWrapper = overlay.querySelector('.swipe-wrapper');
         const pages = overlay.querySelectorAll('.swipe-page');
         const dots = overlay.querySelectorAll('.pagination-container .dot');
-        const pageCount = pages.length;
-        let currentPage = 0;
-        let startX = 0;
-        let isContentDragging = false;
-        function updateSlider() { 
-            swipeWrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)'; 
-            swipeWrapper.style.transform = `translateX(-${currentPage * 100}%)`;
-            dots.forEach((dot, index) => { dot.classList.toggle('active', index === currentPage); });
-        }
-        function handleContentStart(clientX) { 
-            isContentDragging = true; startX = clientX; swipeWrapper.style.transition = 'none'; 
-        }
-        function handleContentMove(clientX) { 
-            if (!isContentDragging) return;
-            const diffX = clientX - startX;
-            const baseTranslate = -currentPage * swipeContainer.offsetWidth;
-            swipeWrapper.style.transform = `translateX(${baseTranslate + diffX}px)`;
-        }
-        function handleContentEnd(clientX) { 
-            if (!isContentDragging) return; isContentDragging = false;
-            const diffX = clientX - startX;
-            const threshold = swipeContainer.offsetWidth / 4; 
-            if (Math.abs(diffX) > threshold) {
-                if (diffX < 0 && currentPage < pageCount - 1) { currentPage++; }
-                else if (diffX > 0 && currentPage > 0) { currentPage--; }
+        
+        // Controllo robusto per lo swipe
+        if (swipeContainer && swipeWrapper && pages.length > 0 && dots.length > 0) {
+            const pageCount = pages.length;
+            let currentPage = 0;
+            let startX = 0;
+            let isContentDragging = false;
+            function updateSlider() { 
+                swipeWrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)'; 
+                swipeWrapper.style.transform = `translateX(-${currentPage * 100}%)`;
+                dots.forEach((dot, index) => { dot.classList.toggle('active', index === currentPage); });
             }
-            updateSlider(); 
+            function handleContentStart(clientX) { 
+                isContentDragging = true; startX = clientX; swipeWrapper.style.transition = 'none'; 
+            }
+            function handleContentMove(clientX) { 
+                if (!isContentDragging) return;
+                const diffX = clientX - startX;
+                const baseTranslate = -currentPage * swipeContainer.offsetWidth;
+                swipeWrapper.style.transform = `translateX(${baseTranslate + diffX}px)`;
+            }
+            function handleContentEnd(clientX) { 
+                if (!isContentDragging) return; isContentDragging = false;
+                const diffX = clientX - startX;
+                const threshold = swipeContainer.offsetWidth / 4; 
+                if (Math.abs(diffX) > threshold) {
+                    if (diffX < 0 && currentPage < pageCount - 1) { currentPage++; }
+                    else if (diffX > 0 && currentPage > 0) { currentPage--; }
+                }
+                updateSlider(); 
+            }
+            swipeContainer.addEventListener('touchstart', (e) => handleContentStart(e.touches[0].clientX), { passive: true });
+            swipeContainer.addEventListener('touchmove', (e) => handleContentMove(e.touches[0].clientX), { passive: true });
+            swipeContainer.addEventListener('touchend', (e) => handleContentEnd(e.changedTouches[0].clientX));
+            swipeContainer.addEventListener('mousedown', (e) => handleContentStart(e.clientX));
+            swipeContainer.addEventListener('mousemove', (e) => handleContentMove(e.clientX));
+            swipeContainer.addEventListener('mouseup', (e) => handleContentEnd(e.clientX));
+            swipeContainer.addEventListener('mouseleave', () => { if (isContentDragging) handleContentEnd(startX); });
+            updateSlider();
         }
-        swipeContainer.addEventListener('touchstart', (e) => handleContentStart(e.touches[0].clientX), { passive: true });
-        swipeContainer.addEventListener('touchmove', (e) => handleContentMove(e.touches[0].clientX), { passive: true });
-        swipeContainer.addEventListener('touchend', (e) => handleContentEnd(e.changedTouches[0].clientX));
-        swipeContainer.addEventListener('mousedown', (e) => handleContentStart(e.clientX));
-        swipeContainer.addEventListener('mousemove', (e) => handleContentMove(e.clientX));
-        swipeContainer.addEventListener('mouseup', (e) => handleContentEnd(e.clientX));
-        swipeContainer.addEventListener('mouseleave', () => { if (isContentDragging) handleContentEnd(startX); });
-        updateSlider();
 
-        // --- LOGICA DRAG-TO-CLOSE (Verticale - invariata) ---
+        // --- LOGICA DRAG-TO-CLOSE (Verticale) ---
         const dragHandle = document.getElementById('drag-handle');
         const plantCard = overlay.querySelector('.plant-card');
-        let dragStartY = 0;
-        let isCardDragging = false;
-        function handleCardDragStart(e) {
-            if (isContentDragging) return; 
-            e.preventDefault();
-            isCardDragging = true;
-            dragStartY = e.touches ? e.touches[0].clientY : e.clientY;
-            overlay.style.transition = 'none'; 
-        }
-        function handleCardDragMove(e) {
-            if (!isCardDragging) return;
-            e.preventDefault();
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            let diffY = clientY - dragStartY;
-            if (diffY < 0) diffY = 0; 
-            overlay.style.transform = `translateY(${diffY}px)`;
-        }
-        function handleCardDragEnd(e) {
-            if (!isCardDragging) return;
-            isCardDragging = false;
-            const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
-            const diffY = clientY - dragStartY;
-            const threshold = plantCard.offsetHeight * 0.33; 
-            overlay.style.transition = ''; 
-            if (diffY > threshold) {
-                overlay.classList.remove('is-visible');
-            } else {
-                overlay.style.transform = 'translateY(0%)';
+        
+        if (dragHandle && plantCard) {
+            let dragStartY = 0;
+            let isCardDragging = false;
+            let isContentDraggingForCard = false; // Variabile locale per evitare conflitti
+            
+            // Aggiorniamo lo stato di dragging del contenuto
+            if(swipeContainer) {
+                 swipeContainer.addEventListener('touchstart', () => isContentDraggingForCard = true, { passive: true });
+                 swipeContainer.addEventListener('touchend', () => isContentDraggingForCard = false);
+                 swipeContainer.addEventListener('mousedown', () => isContentDraggingForCard = true);
+                 swipeContainer.addEventListener('mouseup', () => isContentDraggingForCard = false);
             }
-            setTimeout(() => {
-                overlay.style.transform = '';
-            }, 500);
+
+            function handleCardDragStart(e) {
+                if (isContentDraggingForCard) return; 
+                e.preventDefault();
+                isCardDragging = true;
+                dragStartY = e.touches ? e.touches[0].clientY : e.clientY;
+                overlay.style.transition = 'none'; 
+            }
+            function handleCardDragMove(e) {
+                if (!isCardDragging) return;
+                e.preventDefault();
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                let diffY = clientY - dragStartY;
+                if (diffY < 0) diffY = 0; 
+                overlay.style.transform = `translateY(${diffY}px)`;
+            }
+            function handleCardDragEnd(e) {
+                if (!isCardDragging) return;
+                isCardDragging = false;
+                const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+                const diffY = clientY - dragStartY;
+                const threshold = plantCard.offsetHeight * 0.33; 
+                overlay.style.transition = ''; 
+                if (diffY > threshold) {
+                    overlay.classList.remove('is-visible');
+                } else {
+                    overlay.style.transform = 'translateY(0%)';
+                }
+                setTimeout(() => {
+                    overlay.style.transform = '';
+                }, 500);
+            }
+            dragHandle.addEventListener('touchstart', handleCardDragStart, { passive: false });
+            dragHandle.addEventListener('mousedown', handleCardDragStart);
+            document.addEventListener('touchmove', handleCardDragMove, { passive: false });
+            document.addEventListener('mousemove', handleCardDragMove);
+            document.addEventListener('touchend', handleCardDragEnd);
+            document.addEventListener('mouseup', handleCardDragEnd);
         }
-        dragHandle.addEventListener('touchstart', handleCardDragStart, { passive: false });
-        dragHandle.addEventListener('mousedown', handleCardDragStart);
-        document.addEventListener('touchmove', handleCardDragMove, { passive: false });
-        document.addEventListener('mousemove', handleCardDragMove);
-        document.addEventListener('touchend', handleCardDragEnd);
-        document.addEventListener('mouseup', handleCardDragEnd);
     });
 </script>
 
 <style>
-  /* ...tutti i tuoi stili di scanner.astro... */
+    /* --- CSS HEADER (COPIATO DA PERSONALE.ASTRO) --- */
+    .mobile-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0.5rem; 
+      box-sizing: border-box;
+      transition: background-color 0.3s ease;
+    }
+
+    .mobile-header-logo {
+      font-family: 'Monument Grotesk Trial', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-decoration: none;
+      z-index: 1;
+    }
+
+    .mobile-header-right {
+      font-family: 'Monument Grotesk Mono Trial', monospace;
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      text-align: right;
+      z-index: 1;
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    .mobile-header-right a,
+    .mobile-header-right span {
+      text-decoration: none;
+    }
+    
+    .mobile-header.theme-light {
+      background-color: #ffffff;
+      color: #000000;
+    }
+    .mobile-header.theme-light .mobile-header-logo,
+    .mobile-header.theme-light .mobile-header-right a,
+    .mobile-header.theme-light .mobile-header-right span {
+      color: #000;
+    }
+
+    .mobile-header.theme-dark {
+      background-color: #000000; 
+      color: #ffffff;
+    }
+    .mobile-header.theme-dark .mobile-header-logo,
+    .mobile-header.theme-dark .mobile-header-right a,
+    .mobile-header.theme-dark .mobile-header-right span {
+      color: #fff;
+    }
+    .mobile-header.theme-dark .mobile-header-right svg path {
+      stroke: #fff;
+    }
+    /* --- FINE CSS HEADER --- */
+
+
     /* Stili Pagina Fotocamera (Sfondo) */
     .main-content-camera { 
         height: 100%; 
@@ -261,10 +334,12 @@ const plantName = plant.name;
         backdrop-filter: blur(3px); 
     }
     .camera-overlay-content p { 
-        font-size: 1.3rem; 
+        font-family: monospace;
+        text-transform: uppercase;
+        font-size: 1rem; 
         font-weight: 500; 
         margin-bottom: 2rem; 
-        line-height: 1.4; 
+        line-height: 1; 
         max-width: 300px; 
         text-align: center; 
         color: white; 
@@ -284,12 +359,12 @@ const plantName = plant.name;
 
     /* Stili Card Overlay (Foglio nero) */
     .plant-card-overlay { 
-       position: fixed; 
+        position: fixed; 
         top: 0;
         left: 0;
         width: 100%;
-        height: 100dvh; /* <-- CORREZIONE: Usa 'dvh' */
-        z-index: 200;
+        height: 100dvh;
+        z-index: 200; 
         background-color: rgba(0, 0, 0, 0.3); 
         opacity: 0; 
         pointer-events: none; 
@@ -303,10 +378,11 @@ const plantName = plant.name;
     }
     .plant-card { 
         width: 100%; 
-        height: 100%; 
+        height: 85vh; 
         background-color: #000; 
-        border-radius: 0; 
-        position: relative; 
+        border-radius: 25px 25px 0 0;
+        position: absolute;
+        bottom: 0;
         display: flex; 
         flex-direction: column; 
         overflow: hidden; 
@@ -330,8 +406,8 @@ const plantName = plant.name;
         border-radius: 3px; 
     }
     .card-content { 
-        padding: 1.5rem; 
-        padding-top: 40px; 
+        padding: 1rem;
+        padding-top: 35px;
         flex-grow: 1; 
         display: flex; 
         flex-direction: column; 
@@ -344,27 +420,28 @@ const plantName = plant.name;
         overflow: hidden; 
         flex-shrink: 0; 
     }
-  .image-container img { 
+    .image-container img { 
         width: 100%; 
         display: block; 
-        max-height: 30vh;   /* <-- AGGIUNTA: Limita l'altezza dell'immagine */
-        object-fit: cover;  /* <-- AGGIUNTA: Mantiene le proporzioni */
+        max-height: 35vh;
+        object-fit: cover;
     }
     .title-header { 
+        font-family: Arial, Helvetica, sans-serif;
         display: flex; 
         justify-content: space-between; 
         align-items: center; 
-        margin: 1rem 0; 
+        margin: 1rem 0;
         flex-shrink: 0; 
     }
     h2 { 
         text-align: left; 
         margin: 0; 
-        font-size: 1.5rem; 
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 1.35rem;
         font-weight: 600; 
         color: white; 
     }
-    /* Bottone +/✓ trasparente */
     .plus-icon { 
         position: relative; 
         top: 0; 
@@ -396,7 +473,7 @@ const plantName = plant.name;
         flex-shrink: 0; 
         box-sizing: border-box; 
         padding: 0 0.2rem; 
-        overflow-y: hidden; 
+        overflow-y: hidden;
         scrollbar-width: none; 
         -ms-overflow-style: none; 
     }
@@ -406,37 +483,49 @@ const plantName = plant.name;
 
     /* Stili Dettagli (compatti) */
     .plant-details { 
+        font-family: Arial, Helvetica, sans-serif;
         font-size: 0.9rem; 
     }
     .plant-details div { 
         display: flex; 
         justify-content: space-between; 
-        padding: 0.4rem 0; 
+        padding: 0.3rem 0;
         border-bottom: 1px solid #222; 
     }
     .plant-details div:last-child { 
         border-bottom: none; 
     }
     .plant-details dt { 
+        font-family: Arial, Helvetica, sans-serif;
         color: #fff; 
         font-weight: 600; 
+        font-size: 0.85rem;
     }
     .plant-details dd { 
+        font-family: Arial, Helvetica, sans-serif;
         margin: 0; 
         color: #8e8e93; 
         font-weight: 500; 
+        font-size: 0.85rem;
     }
     .swipe-page h3 { 
+        font-family: Arial, Helvetica, sans-serif;
         font-size: 1rem; 
         font-weight: 600; 
         color: #fff; 
         margin-bottom: 0.5rem; 
     }
     .plant-description { 
+        font-family: Arial, Helvetica, sans-serif;
         font-size: 0.95rem; 
         line-height: 1.6; 
         color: #eee; 
-        margin: 0; 
+        margin: 0;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4; 
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     /* Stili Footer */
@@ -446,7 +535,7 @@ const plantName = plant.name;
         justify-content: flex-end; 
         align-items: center; 
         margin-top: auto; 
-        padding: 1rem 0 0.5rem 0; 
+        padding: 1rem 0 0.5rem 0;
         flex-shrink: 0; 
     }
     .pagination-container { 
@@ -457,6 +546,7 @@ const plantName = plant.name;
         gap: 8px; 
     }
     .collection-link { 
+        font-family: monospace;
         color: white; 
         text-decoration: none; 
         font-weight: 600; 
@@ -486,13 +576,11 @@ const plantName = plant.name;
     }
     
     /* Animazione Bottone +/✓ */
-   .plus-icon svg { 
+    .plus-icon svg { 
         position: absolute; 
-        transition: transform 0.4s ease, opacity 0.4s ease; 
-        
-        /* --- AGGIUNTA --- */
-        width: 28px;  /* Imposta una larghezza fissa */
-        height: 28px; /* Imposta un'altezza fissa */
+        transition: transform 0.4s ease, opacity 0.4s ease;
+        width: 28px;
+        height: 28px;
     }
     .icon-plus { 
         opacity: 1; 

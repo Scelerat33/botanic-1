@@ -1,16 +1,19 @@
 ---
-// src/pages/wrapped.astro
 import MobileLayout from '../layouts/MobileLayout.astro';
 ---
 <MobileLayout>
   <div class="page-wrapper">
     
-    <a href="/" class="header-link top-left">GBA</a>
-    <a href="/personale" class="header-link top-right-back" aria-label="Torna alla collezione">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M18 6L6 18M6 6L18 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-    </a>
+    <header class="mobile-header theme-dark" >
+      <a href="/" class="mobile-header-logo" transition:name="logo-gba">GBA</a>
+      <div class="mobile-header-right">
+        <a href="/personale" aria-label="Torna alla collezione">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+               <path d="M19 12H5M12 19l-7-7 7-7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </a>
+      </div>
+    </header>
 
     <div class="corner-plus top-left-plus">+</div>
     <div class="corner-plus top-right-plus">+</div>
@@ -24,7 +27,11 @@ import MobileLayout from '../layouts/MobileLayout.astro';
                 <div class="image-slide"><img src="/papiro-egiziano.jpg" alt="Papiro Egiziano" class="featured-image"/></div>
                 <div class="image-slide"><img src="/fiore-colorato.jpg" alt="Fiore Colorato" class="featured-image"/></div>
                 <div class="image-slide"><img src="/albero-rigoglioso.jpg" alt="Albero Rigoglioso" class="featured-image"/></div>
-                <div class="image-slide"><img src="/pianta-grassa.jpg" alt="Pianta Grassa" class="featured-image"/></div>
+                <div class="image-slide"><img src="/MACRO16.jpg" alt="Pianta Grassa" class="featured-image"/></div>
+                <div class="image-slide"><img src="/MACRO159.jpg" alt="Description for image 5" class="featured-image"/></div>
+                <div class="image-slide"><img src="/MACRO156.jpg" alt="Description for image 6" class="featured-image"/></div>
+                <div class="image-slide"><img src="/MACRO132.jpg" alt="Description for image 7" class="featured-image"/></div>
+                <div class="image-slide"><img src="/pianta-grassa.jpg" alt="Description for image 8" class="featured-image"/></div>
             </div>
             
             <div class="overlay-text overlay-top-left">
@@ -36,7 +43,7 @@ import MobileLayout from '../layouts/MobileLayout.astro';
                 18°C
             </div>
             <div class="overlay-text overlay-bottom-center">
-                You saw <span class="highlight">67 plants</span>
+                You saw <span class="highlight">8 plants</span>
             </div>
         </div>
     </main>
@@ -49,7 +56,7 @@ import MobileLayout from '../layouts/MobileLayout.astro';
             <button id="close-share-overlay" class="close-share-btn">
                 <svg width="24" height="24" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6L18 18" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
-            <div class="share-header-action"><h2 class="share-title">Share <br>with friends</h2></div>
+            <div class="share-header-action"><h2 class="share-title">Share with friends</h2></div>
             <p class="share-to-label">Share to</p>
             <div class="social-icons">
                 <a href="mailto:?subject=My%20Visit%20to%20Urbino's%20Botanical%20Garden&body=I%20had%20so%20much%20fun%20at%20the%20Urbino's%20Botanical%20Garden!%0A%0A(Don't%20forget%20to%20attach%20the%20image!)" class="social-item-link"><div class="social-item"><img src="/icons/mail.svg" alt="Mail" class="social-icon mail-icon"><span>Mail</span></div></a>
@@ -65,19 +72,22 @@ import MobileLayout from '../layouts/MobileLayout.astro';
 <script>
     import html2canvas from 'html2canvas';
 
-    document.addEventListener('DOMContentLoaded', () => {
-        // Elementi overlay condivisione
+    document.addEventListener('astro:page-load', () => {
         const openShareButton = document.getElementById('open-share-overlay');
         const closeShareButton = document.getElementById('close-share-overlay');
         const shareOverlay = document.getElementById('share-overlay');
-        const backdrop = shareOverlay.querySelector('.share-backdrop');
+        const backdrop = shareOverlay ? shareOverlay.querySelector('.share-backdrop') : null;
         const saveCardButton = document.getElementById('save-card-btn');
         const cardToDownload = document.getElementById('card-to-download');
-        const imageWrapper = cardToDownload.querySelector('.image-slider-wrapper');
-        const imageSlides = cardToDownload.querySelectorAll('.image-slide');
-        const imageCount = imageSlides.length;
+        const imageWrapper = cardToDownload ? cardToDownload.querySelector('.image-slider-wrapper') : null;
+        const imageSlides = cardToDownload ? cardToDownload.querySelectorAll('.image-slide') : null;
 
-        if (!openShareButton || !closeShareButton || !shareOverlay || !backdrop || !saveCardButton || !cardToDownload || !imageWrapper || imageSlides.length === 0) { console.error("Required elements not found!"); return; }
+        if (!openShareButton || !closeShareButton || !shareOverlay || !backdrop || !saveCardButton || !cardToDownload || !imageWrapper || !imageSlides || imageSlides.length === 0) { 
+            console.error("Wrapped Page: Required elements not found!"); 
+            return; 
+        }
+
+        const imageCount = imageSlides.length;
 
         function openOverlay() { shareOverlay.classList.add('is-visible'); }
         function closeOverlay() { shareOverlay.classList.remove('is-visible'); }
@@ -131,13 +141,12 @@ import MobileLayout from '../layouts/MobileLayout.astro';
         snapToSlide(); setTimeout(() => { imageWrapper.style.transition = 'transform 0.3s ease-out'; }, 50); cardToDownload.style.cursor = 'grab';
 
         function downloadCardImage() {
-            console.log("Attempting to capture card...");
             if (!html2canvas) { console.error("html2canvas library is not loaded!"); return; }
             const scale = window.devicePixelRatio * 2;
             html2canvas(cardToDownload, { allowTaint: true, useCORS: true, backgroundColor: null, scale: scale, width: cardToDownload.offsetWidth, height: cardToDownload.offsetHeight })
             .then(canvas => {
                 const imageURL = canvas.toDataURL("image/png"); const downloadLink = document.createElement('a'); downloadLink.href = imageURL; downloadLink.download = `urbino-botanic-wrapped-img${currentImageIndex+1}.png`;
-                document.body.appendChild(downloadLink); downloadLink.click(); document.body.removeChild(downloadLink); console.log("Download triggered");
+                document.body.appendChild(downloadLink); downloadLink.click(); document.body.removeChild(downloadLink);
             }).catch(error => { console.error("Error capturing card with html2canvas:", error); });
         }
         if(saveCardButton) saveCardButton.addEventListener('click', downloadCardImage);
@@ -145,54 +154,124 @@ import MobileLayout from '../layouts/MobileLayout.astro';
 </script>
 
 <style>
-    /* --- NUOVO LAYOUT --- */
+    /* --- CSS HEADER --- */
+    .mobile-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      /* --- VERIFICATO: Padding identico a personale.astro --- */
+      padding: 1rem 0.5rem; 
+      box-sizing: border-box;
+      transition: background-color 0.3s ease;
+      /* Il border-bottom è gestito dalle classi .theme-light/.theme-dark */
+    }
+
+    .mobile-header-logo {
+      font-family: 'Monument Grotesk Trial', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-decoration: none;
+      z-index: 1;
+    }
+
+    .mobile-header-right {
+      font-family: 'Monument Grotesk Mono Trial', monospace;
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      text-align: right;
+      z-index: 1;
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    .mobile-header-right a,
+    .mobile-header-right span {
+      text-decoration: none;
+    }
+    
+    .mobile-header.theme-light {
+      background-color: #ffffff;
+      color: #000000;
+      border-bottom: 1px solid #eee;
+    }
+    .mobile-header.theme-light .mobile-header-logo,
+    .mobile-header.theme-light .mobile-header-right a,
+    .mobile-header.theme-light .mobile-header-right span {
+      color: #000;
+    }
+
+    .mobile-header.theme-dark {
+      background-color: #000000; 
+      color: #ffffff;
+      /* --- CORRETTO: Rimosso il border-bottom da qui --- */
+      /* border-bottom: 1px solid #333; */ 
+    }
+    .mobile-header.theme-dark .mobile-header-logo,
+    .mobile-header.theme-dark .mobile-header-right a,
+    .mobile-header.theme-dark .mobile-header-right span {
+      color: #fff;
+    }
+    .mobile-header.theme-dark .mobile-header-right svg path {
+      stroke: #fff;
+    }
+    /* --- FINE CSS HEADER --- */
+
+
+    /* --- LAYOUT PAGINA --- */
     .page-wrapper {
         position: relative;
         width: 100%;
-        height: 100vh; /* /* --- CORREZIONE: 100vh previene lo scroll verticale --- */
+        height: 100vh;
         background: #000;
         color: white;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         overflow: hidden;
     }
-    .header-link {
-        position: absolute;
-        top: 2.5rem;
-        z-index: 10;
-        color: white;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-    }
-    .top-left {
-        left: 1.5rem;
-        font-size: 1.1rem;
-        font-weight: 700;
-    }
-    .top-right-back {
-        right: 1.5rem;
-    }
+    
     .corner-plus {
         position: absolute;
         color: white;
         font-size: 2rem;
-        font-weight: 200; /* Sottile */
+        font-weight: 5;
         z-index: 5;
     }
-    .top-left-plus { top: 3.5rem; left: 3.5rem; }
-    .top-right-plus { top: 3.5rem; right: 3.5rem; }
-    .bottom-left-plus { bottom: 3.5rem; left: 3.5rem; }
-    .bottom-right-plus { bottom: 3.5rem; right: 3.5rem; }
+    
+    .top-left-plus { 
+        top: 4.5rem; 
+        left: 4.5rem; 
+        transform: translate(-50%, -50%);
+    }
+    .top-right-plus { 
+        top: 4.5rem; 
+        right: 4.5rem; 
+        transform: translate(50%, -50%);
+    }
+    .bottom-left-plus { 
+        bottom: 4.5rem; 
+        left: 4.5rem; 
+        transform: translate(-50%, 50%);
+    }
+    .bottom-right-plus { 
+        bottom: 4.5rem; 
+        right: 4.5rem; 
+        transform: translate(50%, 50%);
+    }
 
-    /* --- MODIFICA --- */
+
     .content-area {
         position: absolute;
-        top: 3.5rem;
-        bottom: 3.5rem;
-        left: 3.5rem;
-        right: 3.5rem;
+        top: 4.5rem; 
+        bottom: 4.5rem;
+        left: 4.5rem;
+        right: 4.5rem;
     }
+
 
     .share-link {
         position: absolute;
@@ -207,13 +286,9 @@ import MobileLayout from '../layouts/MobileLayout.astro';
         cursor: pointer;
     }
 
-    /* --- VECCHIO CSS (ADATTATO) --- */
-
-    /* Card da scaricare (vecchio .summary-card) */
-    /* --- MODIFICA --- */
     .wrapped-card {
         background-color: #000000; 
-        border-radius: 0; /* --- CORREZIONE: Rimossi angoli arrotondati --- */
+        border-radius: 0;
         width: 100%;
         height: 100%;
         overflow: hidden; 
@@ -223,13 +298,11 @@ import MobileLayout from '../layouts/MobileLayout.astro';
     }
     .wrapped-card:active { cursor: grabbing; }
 
-    /* Slider (da vecchio codice) */
     .image-overlay-wrapper { width: 100%; height: 100%; position: relative; overflow: hidden; }
     .image-slider-wrapper { display: flex; height: 100%; }
     .image-slide { width: 100%; height: 100%; flex-shrink: 0; }
     .featured-image { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; -webkit-user-drag: none; }
 
-    /* Testi Overlay (aggiornati al NUOVO stile) */
      .overlay-text {
         position: absolute; 
         color: white; 
@@ -239,7 +312,7 @@ import MobileLayout from '../layouts/MobileLayout.astro';
         pointer-events: none; 
         user-select: none;
         font-weight: 500;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        
     }
     .overlay-top-left {
         top: 0; left: 0; text-align: left;
@@ -255,25 +328,129 @@ import MobileLayout from '../layouts/MobileLayout.astro';
     }
     .overlay-bottom-center .highlight { font-weight: bold; }
 
-    /* Overlay Condivisione (da vecchio codice) */
-    .share-overlay { position: fixed; inset: 0; z-index: 1000; display: flex; justify-content: center; align-items: flex-end; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.3s ease, visibility 0s linear 0.3s; }
-    .share-overlay.is-visible { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity 0.3s ease, visibility 0s linear 0s; }
-    .share-backdrop { position: absolute; inset: 0; background-color: rgba(0, 0, 0, 0.4); }
-    .share-sheet { width: 100%; background-color: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); color: #1C1C1E; border-radius: 25px 25px 0 0; padding: 1.5rem; box-sizing: border-box; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); padding-bottom: 3rem; position: relative; z-index: 1; }
-    .share-overlay.is-visible .share-sheet { transform: translateY(0); }
-    .close-share-btn { position: absolute; top: 1rem; right: 1rem; background-color: rgba(0, 0, 0, 0.1); border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 10; }
-    .close-share-btn svg path { stroke: #333; }
-    .share-header-action { margin-bottom: 2rem; margin-top: 1rem; }
-    .share-title { font-size: 2.5rem; font-weight: 700; line-height: 1.1; margin: 0; text-align: left; color: #1C1C1E; }
-    .share-to-label { text-align: left; color: #555; font-size: 0.9rem; margin-bottom: 1.5rem; }
-    .social-icons { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 0 0.5rem; }
-    .social-item-link { text-decoration: none; }
-    .social-item-button { background: none; border: none; padding: 0; cursor: pointer; text-align: inherit; font: inherit; }
-    .social-item { display: flex; flex-direction: column; align-items: center; color: #555; font-size: 0.75rem; text-align: center; gap: 0.5rem; }
-    .social-icon { width: 50px; height: 50px; border-radius: 12px; padding: 8px; box-sizing: border-box; transition: transform 0.2s ease; }
-    .social-icon:hover { transform: scale(1.05); }
-    .social-icon.mail-icon { background-color: #777; }
-    .social-item:nth-child(2) .social-icon { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
-    .social-item:nth-child(3) .social-icon { background-color: #25D366; }
-    .save-icon { background-color: #555; }
+    /* Overlay Condivisione */
+   /* --- MODIFICHE OVERLAY CONDIVISIONE (Nero/Bianco) --- */
+    .share-overlay { 
+        position: fixed; 
+        inset: 0; 
+        z-index: 1000; 
+        display: flex; 
+        justify-content: center; 
+        align-items: flex-end; 
+        opacity: 0; 
+        visibility: hidden; 
+        pointer-events: none; 
+        transition: opacity 0.3s ease, visibility 0s linear 0.3s; 
+    }
+    .share-overlay.is-visible { 
+        opacity: 1; 
+        visibility: visible; 
+        pointer-events: auto; 
+        transition: opacity 0.3s ease, visibility 0s linear 0s; 
+    }
+    .share-backdrop { 
+        position: absolute; 
+        inset: 0; 
+        background-color: rgba(0, 0, 0, 0.5); /* Sfondo semi-trasparente nero */
+    }
+    .share-sheet { 
+        width: 100%; 
+        background-color: #000000; /* Sfondo nero */
+        color: #ffffff; /* Testo bianco */
+        border-radius: 25px 25px 0 0; 
+        padding: 1.5rem; 
+        box-sizing: border-box; 
+        transform: translateY(100%); 
+        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
+        padding-bottom: 3rem; 
+        position: relative; 
+        z-index: 1; 
+        /* Rimosso backdrop-filter */
+    }
+    .share-overlay.is-visible .share-sheet { 
+        transform: translateY(0); 
+    }
+    .close-share-btn { 
+      position: absolute; 
+        top: 1rem; 
+        right: 1rem; 
+        /* --- MODIFICHE --- */
+        background-color: transparent; /* Rimosso sfondo */
+        border: none; 
+        border-radius: 0; /* Rimosso arrotondamento */
+        width: auto; /* Dimensione automatica basata su SVG */
+        height: auto; /* Dimensione automatica basata su SVG */
+        padding: 0; /* Rimosso padding interno se presente */
+        /* --- FINE MODIFICHE --- */
+        display: flex; /* Mantenuto per allineare SVG */
+        justify-content: center; 
+        align-items: center; 
+        cursor: pointer; 
+        z-index: 10; 
+    }
+    .close-share-btn svg path { 
+        stroke: #ffffff; /* Mantenuto: Icona 'X' bianca */
+    }
+    .share-header-action { 
+        margin-bottom: 2rem; 
+        margin-top: 1rem; 
+    }
+    .share-title { 
+        font-size: 1rem; 
+        font-weight: 700; 
+        line-height: 1.1; 
+        margin: 0; 
+        text-transform: uppercase;
+        text-align: left; 
+        color: #ffffff; /* Titolo bianco */
+    }
+    .share-to-label { 
+        text-align: left; 
+        color: #888; /* Testo "Share to" grigio chiaro */
+        font-size: 0.9rem; 
+        margin-top: 0.5rem;
+        margin-bottom: 1.5rem; 
+    }
+    .social-icons { 
+        display: flex; 
+        justify-content: space-between; 
+        gap: 1rem; 
+        flex-wrap: wrap; 
+        padding: 0 0.5rem; 
+    }
+    .social-item-link { 
+        text-decoration: none; 
+    }
+    .social-item-button { 
+        background: none; 
+        border: none; 
+        padding: 0; 
+        cursor: pointer; 
+        text-align: inherit; 
+        font: inherit; 
+    }
+    .social-item { 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        color: #ffffff; /* Testo icone bianco */
+        font-size: 0.75rem; 
+        text-align: center; 
+        gap: 0.5rem; 
+    }
+    .social-icon { 
+        width: 50px; 
+        height: 50px; 
+        border-radius: 12px; 
+        padding: 8px; 
+        box-sizing: border-box; 
+        transition: transform 0.2s ease; 
+        /* Rimosso background specifico per icona */
+        background-color: #222; /* Sfondo icone grigio scuro */
+    }
+    .social-icon:hover { 
+        transform: scale(1.05); 
+    }
+    /* Rimosse le regole specifiche per .mail-icon, nth-child(2), nth-child(3), .save-icon */
+    /* Assicurati che le tue SVG siano bianche o usa CSS per cambiarne il colore se possibile */
 </style>

@@ -1,14 +1,26 @@
 ---
-// src/pages/personale.astro
 import MobileLayout from '../layouts/MobileLayout.astro';
-import ScanCard from '../components/ScanCard.astro'; // <-- CORREZIONE: Rimosso il commento non valido
+import ScanCard from '../components/ScanCard.astro'; 
+
+const staticPlants = [
+  "Agapanto",
+  "Bosso",
+  "Cactus a Coda di Scimmia",
+  "Edera",
+  "Equiseto",
+  "Gelso Nero",
+  "Leccio",
+  "Quercia"
+];
 ---
 <MobileLayout>
   <div class="page-wrapper">
     
-    <header class="page-header">
-      <a href="/" class="header-link top-left">GBA</a>
-      <a href="/personale" class="header-link top-right">YOUR COLLECTION (0)</a>
+    <header class="mobile-header theme-dark" transition:persist>
+      <a href="/" class="mobile-header-logo" transition:name="logo-gba">GBA</a>
+      <div class="mobile-header-right">
+        <a href="/personale" id="collection-header-link">YOUR COLLECTION</a>
+      </div>
     </header>
 
     <div class="content-area">
@@ -21,20 +33,18 @@ import ScanCard from '../components/ScanCard.astro'; // <-- CORREZIONE: Rimosso 
       <div id="collection-list" class="collection-list">
         </div>
 
-    </div>
+      <footer class="page-footer">
+        <div class="footer-group bottom-left">
+         <a href="/wrapped" class="footer-link">SHARE COLLECTION</a>
+          <a href="/scanner" class="footer-link">PLANTS SCANNER</a>
+        </div>
+        <div class="footer-group bottom-right">
+          <a href="/locations" class="footer-link">YOUR LOCATION</a>
+          <label for="photo-upload-input" class="footer-link">UPDATE PHOTO</label>
+        </div>
+      </footer>
 
-    <footer class="page-footer">
-      <div class="footer-group bottom-left">
-       <a href="/wrapped" class="footer-link">SHARE COLLECTION</a>
-        <a href="/scanner" class="footer-link">PLANTS SCANNER</a>
-      </div>
-      <div class="footer-group bottom-right">
-        <a href="/locations" class="footer-link">YOUR LOCATION</a>
-        <label for="photo-upload-input" class="footer-link">UPDATE PHOTO</label>
-      </div>
-    </footer>
-
-    <input type="file" id="photo-upload-input" accept="image/*" style="display: none;">
+    </div> <input type="file" id="photo-upload-input" accept="image/*" style="display: none;">
 
     <div id="fullscreen-image-wrapper" class="fullscreen-wrapper">
         <img id="uploaded-image-preview" src="" alt="Foto caricata">
@@ -47,92 +57,97 @@ import ScanCard from '../components/ScanCard.astro'; // <-- CORREZIONE: Rimosso 
   </div>
 </MobileLayout>
 
-<script>
-    // --- Funzioni Helper per il localStorage ---
+<script define:vars={{ staticPlants }}>
     const COLLECTION_KEY = 'gba_collection';
 
     function getCollection() {
-        const data = sessionStorage.getItem(COLLECTION_KEY); // <-- CORRETTO: Legge da sessionStorage
+        const data = sessionStorage.getItem(COLLECTION_KEY);
         return data ? JSON.parse(data) : [];
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        // --- Logica Esistente per la Collezione ---
-        const collection = getCollection();
+    // !!! --- MODIFICA QUI --- !!!
+    // Sostituito 'DOMContentLoaded' con 'astro:page-load'
+    document.addEventListener('astro:page-load', () => {
+        const dynamicCollection = getCollection();
+        const staticCollection = staticPlants; 
+        const fullListToDisplay = [...staticCollection, ...dynamicCollection];
+        const collectionCount = dynamicCollection.length;
         const listContainer = document.getElementById('collection-list');
         const emptyMessage = document.querySelector('.empty-message');
-        const collectionCountHeader = document.querySelector('.top-right');
+        
+        const collectionCountHeader = document.getElementById('collection-header-link');
 
-        collectionCountHeader.textContent = `YOUR COLLECTION (${collection.length})`;
-        emptyMessage.style.display = 'block'; 
-
-        if (collection.length === 0) {
-            listContainer.style.display = 'none';
-        } else {
+        if (collectionCountHeader) {
+          collectionCountHeader.textContent = `YOUR COLLECTION`;
+        }
+        
+        // Controlli per assicurarsi che gli elementi esistano
+        if (emptyMessage) emptyMessage.style.display = 'block'; 
+        if (listContainer) {
             listContainer.style.display = 'block';
-            listContainer.innerHTML = ''; 
-            collection.forEach(plantName => {
+            listContainer.innerHTML = ''; // Pulisci la lista prima di riempirla
+
+            fullListToDisplay.forEach(plantName => {
+                const itemWrapper = document.createElement('div');
+                itemWrapper.className = 'location-item'; 
+                const detailsDiv = document.createElement('div');
+                detailsDiv.className = 'item-details'; 
                 const plantElement = document.createElement('h2');
-                plantElement.className = 'plant-item';
+                plantElement.className = 'item-name';
                 plantElement.textContent = plantName;
-                listContainer.appendChild(plantElement);
+                detailsDiv.appendChild(plantElement);
+                itemWrapper.appendChild(detailsDiv);
+                listContainer.appendChild(itemWrapper);
             });
         }
-
-        // --- Logica per l'Upload Foto ---
+        
         const uploadInput = document.getElementById('photo-upload-input');
         const fullscreenWrapper = document.getElementById('fullscreen-image-wrapper');
         const imagePreview = document.getElementById('uploaded-image-preview');
         const backButton = document.getElementById('back-to-personale');
         const scanButton = document.getElementById('trigger-scan');
         const pageWrapper = document.querySelector('.page-wrapper');
-
-        // --- Elementi del componente ScanCard ---
         const scanCardOverlay = document.getElementById('scan-card-overlay');
         const closeScanCardButton = document.getElementById('close-scan-card');
-        // Aggiungi il backdrop per la chiusura
-        const scanCardBackdrop = scanCardOverlay.querySelector('.scan-card-backdrop');
+        const scanCardBackdrop = scanCardOverlay ? scanCardOverlay.querySelector('.scan-card-backdrop') : null;
 
+        if (uploadInput) {
+            uploadInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    if (imagePreview) imagePreview.src = e.target.result;
+                    if (fullscreenWrapper) fullscreenWrapper.classList.add('is-visible');
+                    if (pageWrapper) pageWrapper.style.overflow = 'hidden'; 
+                };
+                reader.readAsDataURL(file);
+            });
+        }
 
-        // 1. Quando l'utente sceglie un file
-        uploadInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
+        if (backButton) {
+            backButton.addEventListener('click', () => {
+                if (fullscreenWrapper) fullscreenWrapper.classList.remove('is-visible');
+                if(uploadInput) uploadInput.value = null;
+                if (imagePreview) imagePreview.src = "";
+                if (pageWrapper) pageWrapper.style.overflow = 'auto'; 
+            });
+        }
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                imagePreview.src = e.target.result;
-                // CORREZIONE: Usa .classList per aggiungere la classe 'is-visible'
-                fullscreenWrapper.classList.add('is-visible');
-                pageWrapper.style.overflow = 'hidden'; 
-            };
-            reader.readAsDataURL(file);
-        });
+        if (scanButton) {
+            scanButton.addEventListener('click', () => {
+                if (scanCardOverlay) {
+                    scanCardOverlay.classList.add('is-visible');
+                }
+            });
+        }
 
-        // 2. Quando l'utente clicca "Indietro" dalla preview
-        backButton.addEventListener('click', () => {
-            // CORREZIONE: Usa .classList per rimuovere la classe 'is-visible'
-            fullscreenWrapper.classList.remove('is-visible');
-            uploadInput.value = null;
-            imagePreview.src = "";
-            pageWrapper.style.overflow = 'auto'; 
-        });
-
-        // 3. Quando l'utente clicca "Scan"
-        scanButton.addEventListener('click', () => {
-            if (scanCardOverlay) {
-                scanCardOverlay.classList.add('is-visible');
-            }
-        });
-
-        // 4. Funzioni per chiudere la Scan Card
         function closeScanOverlay() {
             if (scanCardOverlay) {
                 scanCardOverlay.classList.remove('is-visible');
             }
         }
 
-        // Assicurati che questi elementi esistano (potrebbero non essere pronti subito)
         if (closeScanCardButton) {
             closeScanCardButton.addEventListener('click', closeScanOverlay);
         }
@@ -143,65 +158,90 @@ import ScanCard from '../components/ScanCard.astro'; // <-- CORREZIONE: Rimosso 
 </script>
 
 <style>
+  /* --- CSS HEADER --- */
+  .mobile-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0.5rem; 
+    box-sizing: border-box;
+    transition: background-color 0.3s ease;
+  }
+
+  .mobile-header-logo {
+    font-family: 'Monument Grotesk Trial', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-decoration: none;
+    z-index: 1;
+  }
+
+  .mobile-header-right {
+    font-family: 'Monument Grotesk Mono Trial', monospace;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    text-align: right;
+    z-index: 1;
+    display: flex;
+    gap: 0.8rem;
+  }
+
+  .mobile-header-right a,
+  .mobile-header-right span {
+    text-decoration: none;
+  }
+  
+  .mobile-header.theme-light {
+    background-color: #ffffff;
+    color: #000000;
+  }
+  .mobile-header.theme-light .mobile-header-logo,
+  .mobile-header.theme-light .mobile-header-right a,
+  .mobile-header.theme-light .mobile-header-right span {
+    color: #000;
+  }
+
+  .mobile-header.theme-dark {
+    background-color: #000000; 
+    color: #ffffff;
+  }
+  .mobile-header.theme-dark .mobile-header-logo,
+  .mobile-header.theme-dark .mobile-header-right a,
+  .mobile-header.theme-dark .mobile-header-right span {
+    color: #fff;
+  }
+  .mobile-header.theme-dark .mobile-header-right svg path {
+    stroke: #fff;
+  }
+  /* --- FINE CSS HEADER --- */
+
+
   .page-wrapper {
     position: relative;
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: #f0f0f0; 
+    background-color: #ffffff;
     color: #333; 
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
 
-  /* --- Posizionamento angoli --- */
-  .header-link, .footer-link {
-    text-decoration: none;
-    color: #555;
-    font-weight: 600;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    position: absolute;
-    z-index: 10;
-  }
-
-  /* Header */
-  .top-left {
-    top: 2.5rem;
-    left: 1.5rem;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #000;
-  }
-  .top-right {
-    top: 2.5rem;
-    right: 1.5rem;
-  }
-
-  /* Footer */
-  .footer-group {
-    position: absolute;
-    bottom: 2.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  .bottom-left {
-    left: 1.5rem;
-    align-items: flex-start;
-  }
-  .bottom-right {
-    right: 1.5rem;
-    align-items: flex-end;
-  }
-  .footer-link {
-    position: static; 
-    cursor: pointer;
-  }
-  
-  /* --- Contenuto Centrale --- */
   .content-area {
-    padding: 8rem 1.5rem 10rem 1.5rem; 
+    padding: 8rem 0 4rem 0; 
   }
+
+  .empty-message,
+  .page-footer {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
   .empty-message h2 {
     font-size: 1.5rem;
     margin: 0 0 0.5rem 0;
@@ -209,24 +249,71 @@ import ScanCard from '../components/ScanCard.astro'; // <-- CORREZIONE: Rimosso 
   }
   .empty-message p {
     font-size: 1rem;
-    color: #666;
+    color: #757575;
     margin: 0;
-    max-width: 200px;
+    max-width: 250px;
     line-height: 1.4;
   }
+  
+  .page-footer {
+    margin-top: 3rem; 
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .footer-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .bottom-left {
+    align-items: flex-start;
+  }
+  .bottom-right {
+    align-items: flex-end;
+  }
+  .footer-link,
+  .footer-link:visited {
+    text-decoration: none;
+    color: #000000;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    position: static;
+  }
+
   .collection-list {
     display: none; 
     margin-top: 2rem;
   }
-  .plant-item {
-    font-size: 1.8rem;
-    color: #000;
-    margin: 0 0 1rem 0;
-    font-weight: 600;
+
+  .location-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1.5rem;
+    border-bottom: 1px solid #eee;
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .location-item:first-child {
+      border-top: 1px solid #eee;
   }
 
-  /* --- CORREZIONE: Stili per l'upload e la preview --- */
-  /* Questo stile nasconde la schermata nera di default */
+  .item-details {
+    display: flex;
+    flex-direction: column;
+  }
+  .item-name {
+    font-size: 1.5rem; 
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+    color: #000;
+  }
+
+  /* Stili upload e preview */
   .fullscreen-wrapper {
       position: fixed;
       top: 0;
@@ -235,9 +322,8 @@ import ScanCard from '../components/ScanCard.astro'; // <-- CORREZIONE: Rimosso 
       height: 100dvh;
       z-index: 1000;
       background: #000;
-      display: none; /* Nascosto di default */
+      display: none;
   }
-  /* Questo stile la mostra quando lo script aggiunge la classe .is-visible */
   .fullscreen-wrapper.is-visible {
       display: block;
   }

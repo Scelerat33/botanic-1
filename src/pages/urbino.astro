@@ -1,5 +1,4 @@
 ---
-// src/pages/urbino.astro
 import MobileLayout from '../layouts/MobileLayout.astro';
 
 // Dati d'esempio per la pagina
@@ -14,15 +13,15 @@ const location = {
 <MobileLayout>
   <div class="page-wrapper-urbino">
     
-    <div class="header-section">
-      <header class="page-header">
-        <a href="/" class="header-link top-left">GBA</a>
-        <div class="header-link top-right">
-          <a href="/personale" class="header-link-item">YOUR</a>
-          <a href="/locations" class="header-link-item">LOCATION</a>
-        </div>
-      </header>
+    <header class="mobile-header theme-dark" transition:persist>
+      <a href="/" class="mobile-header-logo" transition:name="logo-gba">GBA</a>
+      <div class="mobile-header-right">
+        <a href="/personale">YOUR</a>
+        <a href="/locations">LOCATION</a>
+      </div>
+    </header>
 
+    <div class="header-section">
       <div class="title-section">
         <h1>{location.name}</h1>
         <div class="sub-header">
@@ -61,6 +60,72 @@ const location = {
 </MobileLayout>
 
 <style>
+  /* --- CSS HEADER (COPIATO) --- */
+  .mobile-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0.5rem; 
+    box-sizing: border-box;
+    transition: background-color 0.3s ease;
+  }
+
+  .mobile-header-logo {
+    font-family: 'Monument Grotesk Trial', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-decoration: none;
+    z-index: 1;
+  }
+
+  .mobile-header-right {
+    font-family: 'Monument Grotesk Mono Trial', monospace;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    text-align: right;
+    z-index: 1;
+    display: flex;
+    gap: 0.8rem;
+  }
+
+  .mobile-header-right a,
+  .mobile-header-right span {
+    text-decoration: none;
+    color: inherit; /* Eredita il colore dal genitore (bianco o nero) */
+  }
+  
+  .mobile-header.theme-light {
+    background-color: #ffffff;
+    color: #000000;
+    border-bottom: 1px solid #eee;
+  }
+  .mobile-header.theme-light .mobile-header-logo,
+  .mobile-header.theme-light .mobile-header-right a,
+  .mobile-header.theme-light .mobile-header-right span {
+    color: #000;
+  }
+
+  .mobile-header.theme-dark {
+    background-color: #000000; 
+    color: #ffffff;
+  }
+  .mobile-header.theme-dark .mobile-header-logo,
+  .mobile-header.theme-dark .mobile-header-right a,
+  .mobile-header.theme-dark .mobile-header-right span {
+    color: #fff;
+  }
+  .mobile-header.theme-dark .mobile-header-right svg path {
+    stroke: #fff;
+  }
+  /* --- FINE CSS HEADER --- */
+
+
   .page-wrapper-urbino {
    display: flex;
     flex-direction: column;
@@ -73,48 +138,24 @@ const location = {
     background-color: #ffffff;
     color: #000000;
     border-bottom: 1px solid #eee;
+    
+    /* MODIFICA: Aggiunto padding-top per far spazio all'header fisso */
+    padding-top: 4rem; 
   }
-  .page-header {
-    position: relative;
-    padding: 2.5rem 1.5rem;
-    height: 1.2rem; /* Altezza fissa per l'header */
-  }
-  .header-link {
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    position: absolute;
-    z-index: 10;
-  }
-  .top-left {
-    top: 2.5rem;
-    left: 1.5rem;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #000;
-  }
-  .top-right {
-    top: 2.5rem;
-    right: 1.5rem;
-    display: flex;
-    gap: 0.5rem; /* Spazio tra "YOUR" e "LOCATION" */
-  }
-  .header-link-item {
-    text-decoration: none;
-    color: #000; /* Nero come da screenshot */
-    font-weight: 600;
-    font-size: 0.9rem;
-  }
+  
+  /* --- CSS VECCHIO HEADER RIMOSSO --- */
+  /* .page-header, .header-link, .top-left, .top-right, .header-link-item */
+  /* sono stati eliminati */
+
 
   /* Titolo e coordinate */
   .title-section {
     padding: 1.5rem;
-    padding-top: 1rem;
+    padding-top: 1rem; /* Mantenuto padding originale per spazio extra */
     background: #fff;
   }
   h1 {
-    font-size: 1.8rem; /* Più grande */
+    font-size: 1.8rem;
     font-weight: 600;
     margin: 0 0 0.5rem 0;
     color: #000;
@@ -138,12 +179,11 @@ const location = {
 
   /* --- Sezione Inferiore (Nera) --- */
   .main-content {
-    flex-grow: 1; /* Occupa tutto lo spazio rimanente */
+    flex-grow: 1;
     background: #000;
     color: #fff;
     padding: 2.5rem 1.5rem;
     position: relative;
-    /* Spazio in basso per il footer fisso */
     padding-bottom: 8rem; 
   }
   .download-section h3 {
@@ -184,9 +224,8 @@ const location = {
     margin: 0 0 1.2rem 0;
   }
 
-  /* Footer (diverso da 'personale.astro') */
   .page-footer {
-    position: absolute; /* Ancorato al .main-content nero */
+    position: absolute;
     bottom: 2.5rem;
     left: 1.5rem;
     right: 1.5rem;

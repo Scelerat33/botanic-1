@@ -1,7 +1,7 @@
 ---
 // src/components/ScanCard.astro
 
-// --- AGGIUNTA: Dati copiati da scanner.astro ---
+// --- Dati copiati da scanner.astro ---
 const plant = {
     name: "Papiro Egiziano", image: "/papiro-egiziano.jpg",
     family: "Cyperus papyrus", class: "Liliopsida", subclass: "Commelinidae",
@@ -19,7 +19,7 @@ const plantName = plant.name;
         <button id="close-scan-card" class="close-scan-btn">
             <svg width="24" height="24" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6L18 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-
+        
         <div class="image-container">
             <img src={plant.image} alt={plant.name} />
         </div>
@@ -62,7 +62,7 @@ const plantName = plant.name;
 </div>
 
 <script define:vars={{ plantName }}>
-    // --- Funzioni Helper per il localStorage ---
+    // --- Funzioni Helper per il sessionStorage ---
     const COLLECTION_KEY = 'gba_collection';
 
     function getCollection() {
@@ -86,23 +86,18 @@ const plantName = plant.name;
     }
 
     // --- Logica Specifica di questo Componente ---
-    // NOTA: Questo script viene eseguito ogni volta che 
-    // il componente viene caricato, anche se è nascosto.
     (function setupScanCard() {
-        // Cerca gli elementi SOLO all'interno di questo componente
         const overlay = document.getElementById('scan-card-overlay');
-        if (!overlay) return; // Esce se l'overlay non è trovato
+        if (!overlay) return; 
 
         const addBtn = overlay.querySelector('#add-to-collection-btn');
         const collectionLink = overlay.querySelector('.collection-link');
         
-        // Se non trova gli elementi, esce per evitare errori
         if (!addBtn || !collectionLink) {
             console.error("ScanCard: Elementi 'addBtn' o 'collectionLink' non trovati.");
             return;
         }
 
-        // Controlla lo stato INIZIALE della collezione
         const initialCollection = getCollection();
         const isInCollection = initialCollection.includes(plantName); 
         if (isInCollection) {
@@ -110,7 +105,6 @@ const plantName = plant.name;
         }
         collectionLink.textContent = `YOUR COLLECTION (${initialCollection.length})`;
         
-        // Evento per AGGIUNGERE/RIMUOVERE
         addBtn.addEventListener('click', () => { 
             const isAdded = addBtn.classList.toggle('is-added'); 
             if (isAdded) {
@@ -122,13 +116,12 @@ const plantName = plant.name;
             collectionLink.textContent = `YOUR COLLECTION (${collection.length})`;
         });
 
-        // --- LOGICA SWIPE ORIZZONTALE (copiata da scanner.astro) ---
+        // --- LOGICA SWIPE ORIZZONTALE ---
         const swipeContainer = overlay.querySelector('.swipe-container');
         const swipeWrapper = overlay.querySelector('.swipe-wrapper');
         const pages = overlay.querySelectorAll('.swipe-page');
         const dots = overlay.querySelectorAll('.pagination-container .dot');
 
-        // Controlli di sicurezza
         if (!swipeContainer || !swipeWrapper || pages.length === 0 || dots.length === 0) {
              console.error("ScanCard: Elementi dello slider non trovati.");
              return;
@@ -172,7 +165,7 @@ const plantName = plant.name;
         
         updateSlider();
 
-    })(); // Esegue la funzione immediatamente
+    })();
 </script>
 
 
@@ -209,18 +202,14 @@ const plantName = plant.name;
         background-color: #000;
         color: white;
         border-radius: 25px 25px 0 0;
-        padding: 1.5rem;
-        /* --- MODIFICA: Aggiunto padding-top per
-           fare spazio al pulsante X (come il vecchio drag-handle) --- */
-        padding-top: 40px; 
+        padding: 1rem; /* <-- MODIFICA 2 */
+        padding-top: 35px; /* <-- MODIFICA 2 */
         box-sizing: border-box;
         transform: translateY(100%);
         transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         position: relative;
         z-index: 1;
-        max-height: 90vh; /* Impedisce alla card di essere troppo alta */
-        
-        /* --- AGGIUNTA: Permette lo scroll del contenuto se non ci sta --- */
+        height: 85vh; /* Altezza fissa */
         display: flex;
         flex-direction: column;
         overflow: hidden; 
@@ -246,30 +235,30 @@ const plantName = plant.name;
         z-index: 10;
     }
 
-    /* --- AGGIUNTA: CSS del Contenuto (da scanner.astro) --- */
+    /* --- CSS del Contenuto (da scanner.astro) --- */
     .image-container { 
         position: relative; 
         border-radius: 20px; 
         overflow: hidden; 
         flex-shrink: 0; 
     }
-   .image-container img { 
+    .image-container img { 
         width: 100%; 
         display: block; 
-        max-height: 30vh;   /* <-- AGGIUNTA: Limita l'altezza dell'immagine */
-        object-fit: cover;  /* <-- AGGIUNTA: Mantiene le proporzioni */
+        max-height: 35vh;   /* <-- MODIFICA 1 */
+        object-fit: cover;
     }
     .title-header { 
         display: flex; 
         justify-content: space-between; 
         align-items: center; 
-        margin: 1rem 0; 
+        margin: 1rem 0; /* <-- MODIFICA */
         flex-shrink: 0; 
     }
     h2 { 
         text-align: left; 
         margin: 0; 
-        font-size: 1.5rem; 
+        font-size: 1.35rem; /* <-- MODIFICA 3 */
         font-weight: 600; 
         color: white; 
     }
@@ -304,7 +293,7 @@ const plantName = plant.name;
         flex-shrink: 0; 
         box-sizing: border-box; 
         padding: 0 0.2rem; 
-        overflow-y: hidden; 
+        overflow-y: hidden; /* <-- MODIFICA */
         scrollbar-width: none; 
         -ms-overflow-style: none; 
     }
@@ -319,7 +308,7 @@ const plantName = plant.name;
     .plant-details div { 
         display: flex; 
         justify-content: space-between; 
-        padding: 0.4rem 0; 
+        padding: 0.3rem 0; /* <-- MODIFICA 5 */
         border-bottom: 1px solid #222; 
     }
     .plant-details div:last-child { 
@@ -328,11 +317,13 @@ const plantName = plant.name;
     .plant-details dt { 
         color: #fff; 
         font-weight: 600; 
+        font-size: 0.85rem; /* <-- MODIFICA 4 */
     }
     .plant-details dd { 
         margin: 0; 
         color: #8e8e93; 
         font-weight: 500; 
+        font-size: 0.85rem; /* <-- MODIFICA 4 */
     }
     .swipe-page h3 { 
         font-size: 1rem; 
@@ -344,7 +335,12 @@ const plantName = plant.name;
         font-size: 0.95rem; 
         line-height: 1.6; 
         color: #eee; 
-        margin: 0; 
+        margin: 0;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4; 
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     /* Stili Footer */
@@ -354,7 +350,7 @@ const plantName = plant.name;
         justify-content: flex-end; 
         align-items: center; 
         margin-top: auto; 
-        padding: 1rem 0 0.5rem 0; 
+        padding: 1rem 0 0.5rem 0; /* <-- MODIFICA */
         flex-shrink: 0; 
     }
     .pagination-container { 
@@ -396,11 +392,9 @@ const plantName = plant.name;
     /* Animazione Bottone +/✓ */
     .plus-icon svg { 
         position: absolute; 
-        transition: transform 0.4s ease, opacity 0.4s ease; 
-        
-        /* --- AGGIUNTA --- */
-        width: 28px;  /* Imposta una larghezza fissa */
-        height: 28px; /* Imposta un'altezza fissa */
+        transition: transform 0.4s ease, opacity 0.4s ease;
+        width: 28px;  /* Dimensione fissa */
+        height: 28px; /* Dimensione fissa */
     }
     .icon-plus { 
         opacity: 1; 

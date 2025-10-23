@@ -1,15 +1,14 @@
 ---
-// src/layouts/MobileLayout.astro
-// (Potresti avere un 'title' o 'description' qui, va bene)
+import { ViewTransitions } from 'astro:transitions';
 ---
 <!doctype html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <title>GBA</title>
+    
+    <ViewTransitions />
     
 </head>
 <body>
@@ -18,6 +17,27 @@
 </html>
 
 <style is:global>
+  /* --- FONT (Assicurati che siano qui) --- */
+  @font-face { 
+    font-family: 'Monument Grotesk Trial'; 
+    src: url('/src/asset/type/ABCMonumentGrotesk-Medium-Trial.otf') format('opentype'); 
+    font-weight: 500; 
+    font-style: normal; 
+  }
+  @font-face { 
+    font-family: 'Monument Grotesk Trial';
+    src: url('/src/asset/type/ABCMonumentGrotesk-Bold-Trial.otf') format('opentype'); 
+    font-weight: 700; 
+    font-style: normal; 
+  }
+  @font-face { 
+    font-family: 'Monument Grotesk Mono Trial'; 
+    src: url('/src/asset/type/ABCMonumentGroteskMono-Regular-Trial.otf') format('opentype'); 
+    font-weight: 500; 
+    font-style: normal; 
+  }
+  /* --- FINE FONT --- */
+
   *,
     *::before,
     *::after {
@@ -29,8 +49,6 @@
         padding: 0;
         width: 100%;
         height: 100%;
-        
-        /* Forza il blocco dello scroll orizzontale */
         position: relative;
         overflow-x: hidden;
     }
