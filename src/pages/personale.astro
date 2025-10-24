@@ -3,14 +3,14 @@ import MobileLayout from '../layouts/MobileLayout.astro';
 import ScanCard from '../components/ScanCard.astro'; 
 
 const staticPlants = [
-  "Agapanto",
+  "Aechmea gamosepala",
   "Bosso",
   "Cactus a Coda di Scimmia",
   "Edera",
-  "Equiseto",
-  "Gelso Nero",
-  "Leccio",
-  "Quercia"
+  "Gaillardia",
+  "Gigaro scuro",
+  "Kratom",
+  "Orchidea Phalaenopsis"
 ];
 ---
 <MobileLayout>
@@ -48,7 +48,9 @@ const staticPlants = [
 
     <div id="fullscreen-image-wrapper" class="fullscreen-wrapper">
         <img id="uploaded-image-preview" src="" alt="Foto caricata">
-        <button id="back-to-personale" class="fullscreen-btn back-btn">Indietro</button>
+        <button id="back-to-personale" class="fullscreen-btn back-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                 <path d="M19 12H5M12 19l-7-7 7-7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+             </svg></button>
         <button id="trigger-scan" class="fullscreen-btn scan-btn">SCAN</button>
     </div>
 
@@ -225,7 +227,7 @@ const staticPlants = [
   .page-wrapper {
     position: relative;
     width: 100%;
-    height: 100%;
+   min-height: 100%;
     overflow: auto;
     background-color: #ffffff;
     color: #333; 
@@ -333,28 +335,49 @@ const staticPlants = [
       height: 100%;
       object-fit: contain;
   }
-  .fullscreen-btn {
+ .fullscreen-btn {
       position: absolute;
       z-index: 1010;
-      padding: 10px 15px;
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.4);
-      backdrop-filter: blur(10px);
-      border-radius: 8px;
+      padding: 10px 15px; /* Keep some padding for easier clicking */
       cursor: pointer;
-      color: white;
-      font-weight: 600;
       font-size: 0.9rem;
       text-transform: uppercase;
+      font-weight: 600; /* Keep weight */
+      background: none; /* Remove common background */
+      border: none; /* Remove common border */
+      color: white; /* Default color white */
+       /* Remove properties moved to specific buttons or no longer needed */
+       /* backdrop-filter: blur(10px); */
+       /* border-radius: 8px; */
   }
   .back-btn {
       top: 2.5rem;
       left: 1.5rem;
+       /* Removed background, border etc. inherited from .fullscreen-btn */
   }
+   /* Style the SVG inside the back button */
+   .back-btn svg {
+       display: block; /* Prevents extra space */
+       width: 24px;   /* Match SVG dimensions */
+       height: 24px;
+   }
+   .back-btn svg path {
+       stroke: white; /* Ensure path is white */
+   }
   .scan-btn {
       bottom: 2.5rem;
       right: 1.5rem;
-      background: white;
-      color: #000;
+      /* --- MODIFICATIONS --- */
+      background: none; /* Explicitly no background */
+      border: none; /* Explicitly no border */
+      color: white;
+      font-family: 'Monument Grotesk Mono Trial', monospace; /* Monospace font */
+      font-weight: 500; /* Match other mono text weight */
+      /* Remove button-specific styles */
+      /* background: white; */
+      /* color: #000; */
+      /* backdrop-filter: blur(10px); */
+      /* border-radius: 8px; */
+      /* border: 1px solid rgba(255, 255, 255, 0.4); */
   }
 </style>

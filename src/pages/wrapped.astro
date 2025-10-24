@@ -24,14 +24,17 @@ import MobileLayout from '../layouts/MobileLayout.astro';
         <div id="card-to-download" class="wrapped-card">
             
             <div class="image-slider-wrapper">
-                <div class="image-slide"><img src="/papiro-egiziano.jpg" alt="Papiro Egiziano" class="featured-image"/></div>
-                <div class="image-slide"><img src="/fiore-colorato.jpg" alt="Fiore Colorato" class="featured-image"/></div>
-                <div class="image-slide"><img src="/albero-rigoglioso.jpg" alt="Albero Rigoglioso" class="featured-image"/></div>
-                <div class="image-slide"><img src="/MACRO16.jpg" alt="Pianta Grassa" class="featured-image"/></div>
-                <div class="image-slide"><img src="/MACRO159.jpg" alt="Description for image 5" class="featured-image"/></div>
-                <div class="image-slide"><img src="/MACRO156.jpg" alt="Description for image 6" class="featured-image"/></div>
-                <div class="image-slide"><img src="/MACRO132.jpg" alt="Description for image 7" class="featured-image"/></div>
-                <div class="image-slide"><img src="/pianta-grassa.jpg" alt="Description for image 8" class="featured-image"/></div>
+                    <div class="image-slide"><img src="/MACRO12.jpg" alt="aechmea" class="featured-image"/></div>
+                <div class="image-slide"><img src="/MACRO71.jpg" alt="Papiro Egiziano" class="featured-image"/></div>
+                <div class="image-slide"><img src="/MACRO79.jpg" alt="Albero Rigoglioso" class="featured-image"/></div>
+                <div class="image-slide"><img src="/MACRO196.jpg" alt="Pianta Grassa" class="featured-image"/></div>
+                <div class="image-slide"><img src="/MACRO258.jpg" alt="Description for image 5" class="featured-image"/></div>
+                <div class="image-slide"><img src="/MACRO245.jpg" alt="Description for image 6" class="featured-image"/></div>
+                <div class="image-slide"><img src="/MACRO258.jpg" alt="Description for image 7" class="featured-image"/></div>
+                <div class="image-slide"><img src="/MACRO376.jpg" alt="Description for image 8" class="featured-image"/></div>
+                <div class="image-slide"><img src="/papiro-egiziano.jpg" alt="Description for image 9" class="featured-image"/></div>
+                 <div class="image-slide"><img src="/MACRO484.jpg" alt="Description for image 10" class="featured-image"/></div>
+            </div>
             </div>
             
             <div class="overlay-text overlay-top-left">
@@ -43,7 +46,7 @@ import MobileLayout from '../layouts/MobileLayout.astro';
                 18°C
             </div>
             <div class="overlay-text overlay-bottom-center">
-                You saw <span class="highlight">8 plants</span>
+                You saw <span class="highlight">10 plants</span>
             </div>
         </div>
     </main>
@@ -278,6 +281,7 @@ import MobileLayout from '../layouts/MobileLayout.astro';
         bottom: 2.5rem;
         right: 1.5rem;
         z-index: 10;
+        font-family: monospace;
         color: white;
         text-decoration: none;
         font-weight: 600;
@@ -305,10 +309,11 @@ import MobileLayout from '../layouts/MobileLayout.astro';
 
      .overlay-text {
         position: absolute; 
+        
         color: white; 
         padding: 1.5rem;
         font-size: 0.8rem;
-        line-height: 1.4;
+        line-height: 1;
         pointer-events: none; 
         user-select: none;
         font-weight: 500;
@@ -316,9 +321,11 @@ import MobileLayout from '../layouts/MobileLayout.astro';
     }
     .overlay-top-left {
         top: 0; left: 0; text-align: left;
+        transform: translateY(200px);
     }
     .overlay-top-right {
         top: 0; right: 0; text-align: right;
+        transform: translateY(200px);
     }
     .overlay-bottom-center {
         bottom: 0; left: 0; right: 0; text-align: center;
@@ -397,6 +404,7 @@ import MobileLayout from '../layouts/MobileLayout.astro';
     }
     .share-title { 
         font-size: 1rem; 
+        font-family: Arial, Helvetica, sans-serif;
         font-weight: 700; 
         line-height: 1.1; 
         margin: 0; 
@@ -408,6 +416,7 @@ import MobileLayout from '../layouts/MobileLayout.astro';
         text-align: left; 
         color: #888; /* Testo "Share to" grigio chiaro */
         font-size: 0.9rem; 
+         font-family: Arial, Helvetica, sans-serif;
         margin-top: 0.5rem;
         margin-bottom: 1.5rem; 
     }

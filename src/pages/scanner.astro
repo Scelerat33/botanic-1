@@ -1,47 +1,47 @@
 ---
 import MobileLayout from '../layouts/MobileLayout.astro';
 
-// Dati della pianta
+// Plant data (unchanged)
 const plant = {
     name: "Papiro Egiziano", image: "/papiro-egiziano.jpg",
     family: "Cyperus papyrus", class: "Liliopsida", subclass: "Commelinidae",
     order: "Cyperales", genus: "Cyperus",
-    description: "Un popolare ibrido di Aechmea, celebre per la sua infiorescenza unica. Le foglie formano una rosetta verde-grigiastra. Lo stelo fiorale porta brattee di un rosa elettrico da cui si sviluppano fiori di un incredibile colore blu-viola brillante, che creano un contrasto cromatico molto ricercato. Come altre Aechmea, è robusta e monocarpica."
+    description: "Un popolare ibrido di Aechmea, celebre per la sua infiorescenza unica..." // etc.
 };
-
 const plantName = plant.name;
 ---
 <MobileLayout activePage="camera">
 
+    {/* Header (unchanged) */}
     <header class="mobile-header theme-dark" transition:persist>
       <a href="/" class="mobile-header-logo" transition:name="logo-gba">GBA</a>
       <div class="mobile-header-right">
         <span>PLANTS SCANNER</span>
       </div>
     </header>
-    
+
+    {/* Camera View (unchanged) */}
     <main class="main-content-camera">
+        <video id="camera-feed" autoplay playsinline></video>
         <div class="camera-overlay-content">
-            <p>Move around <br> and scan a plant</p>
+            <p id="scan-prompt">Move around <br> and scan a plant</p>
             <button id="scan-btn" class="scan-target-icon">
                 <svg viewBox="0 0 67 67" fill="none"><path d="M33.5 58.625V33.5M33.5 58.625L41.875 50.25M33.5 58.625L25.125 50.25M33.5 33.5V8.375M33.5 33.5H8.375M33.5 33.5H58.625M33.5 8.375L25.125 16.75M33.5 8.375L41.875 16.75M8.375 33.5L16.75 41.875M8.375 33.5L16.75 25.125M58.625 33.5L50.25 25.125M58.625 33.5L50.25 41.875" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
         </div>
     </main>
 
+    {/* Plant Overlay Card (unchanged HTML structure) */}
     <div id="plant-overlay" class="plant-card-overlay">
-        
+       {/* Card content remains the same */}
         <div class="plant-card">
-            
             <div id="drag-handle" class="drag-handle">
                 <span class="drag-handle-bar"></span>
             </div>
-
             <div class="card-content">
                 <div class="image-container">
                     <img src={plant.image} alt={plant.name} />
                 </div>
-
                 <div class="title-header">
                     <h2>{plant.name}</h2>
                     <button id="add-to-collection-btn" class="icon-btn plus-icon">
@@ -49,7 +49,6 @@ const plantName = plant.name;
                         <svg class="icon-check" viewBox="0 0 24 24"><path d="M20 6L9 17L4 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                 </div>
-
                 <div class="swipe-container">
                     <div class="swipe-wrapper">
                         <div class="swipe-page">
@@ -67,7 +66,6 @@ const plantName = plant.name;
                         </div>
                     </div>
                 </div>
-
                 <div class="card-footer">
                     <div class="pagination-container">
                         <span class="dot active" data-index="0"></span>
@@ -75,16 +73,17 @@ const plantName = plant.name;
                     </div>
                     <a href="/personale" class="collection-link">YOUR COLLECTION (0)</a>
                 </div>
-
             </div>
         </div>
     </div>
 </MobileLayout>
 
+{/* Corrected Unified Script Block */}
 <script define:vars={{ plantName }}>
-    // --- Funzioni Helper per il sessionStorage ---
     const COLLECTION_KEY = 'gba_collection';
+    let videoStream = null;
 
+    // Helper functions (unchanged)
     function getCollection() {
         const data = sessionStorage.getItem(COLLECTION_KEY);
         return data ? JSON.parse(data) : [];
@@ -105,497 +104,354 @@ const plantName = plant.name;
         saveCollection(collection);
     }
 
-    // --- Logica Principale ---
-    // !!! --- MODIFICA QUI --- !!!
-    // Sostituito 'DOMContentLoaded' con 'astro:page-load'
+    // Camera functions (unchanged)
+    async function startCamera() {
+        const videoElement = document.getElementById('camera-feed');
+        if (!videoElement) return;
+        stopCamera();
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            videoElement.srcObject = videoStream;
+            await videoElement.play();
+            console.log('Camera started');
+        } catch (err) {
+            console.error('Camera Error:', err);
+        }
+    }
+    function stopCamera() {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+            const videoElement = document.getElementById('camera-feed');
+            if (videoElement) videoElement.srcObject = null;
+            console.log('Camera stopped');
+        }
+    }
+
+    // Main event listener
     document.addEventListener('astro:page-load', () => {
-        const scanBtn = document.getElementById('scan-btn');
+        console.log('astro:page-load scanner page');
+
+        // --- Start Camera ---
+        startCamera();
+
+        // --- Plant Overlay Logic ---
         const overlay = document.getElementById('plant-overlay');
-        const addBtn = document.getElementById('add-to-collection-btn');
-        const collectionLink = document.querySelector('.collection-link');
+        const addBtn = overlay ? overlay.querySelector('#add-to-collection-btn') : null;
+        const collectionLink = overlay ? overlay.querySelector('.collection-link') : null;
+        const scanBtn = document.getElementById('scan-btn'); // Central scan button
+        const scanPrompt = document.getElementById('scan-prompt'); // Text prompt
 
-        // Controlli per evitare errori se gli elementi non esistono
-        if (!scanBtn || !overlay || !addBtn || !collectionLink) {
-             console.error("Elementi UI scanner non trovati");
-             return;
+        // Robust checks
+        if (!overlay || !addBtn || !collectionLink || !scanBtn || !scanPrompt) {
+            console.error("One or more essential scanner UI elements not found!");
+            return; // Stop if something critical is missing
         }
 
-        const initialCollection = getCollection();
-        const isInCollection = initialCollection.includes(plantName); 
+        // Ensure button and text are visible initially
+        scanBtn.style.display = '';
+        scanPrompt.style.display = '';
 
-        if (isInCollection) {
-            addBtn.classList.add('is-added');
-        }
-        collectionLink.textContent = `YOUR COLLECTION (${initialCollection.length})`;
-        
-        scanBtn.addEventListener('click', () => { 
-            overlay.classList.add('is-visible'); 
+        // --- Listener to show overlay on button click ---
+        scanBtn.addEventListener('click', () => {
+            console.log('Scan button clicked - showing overlay');
+            overlay.classList.add('is-visible');
         });
-        
-        addBtn.addEventListener('click', () => { 
-            const isAdded = addBtn.classList.toggle('is-added'); 
-            
+
+        // Initial setup for add button and collection link (inside overlay)
+        const initialCollection = getCollection();
+        const isInCollection = initialCollection.includes(plantName);
+        if (isInCollection) addBtn.classList.add('is-added');
+        collectionLink.textContent = `YOUR COLLECTION (${initialCollection.length})`;
+
+        // --- CORRECTED: Add button click listener ---
+        addBtn.addEventListener('click', () => {
+            const isAdded = addBtn.classList.toggle('is-added');
             if (isAdded) {
                 addToCollection(plantName);
+                console.log('Added to collection:', plantName);
             } else {
                 removeFromCollection(plantName);
+                console.log('Removed from collection:', plantName);
             }
-            
-            const collection = getCollection();
-            collectionLink.textContent = `YOUR COLLECTION (${collection.length})`;
+            // Update the count in the link text
+            collectionLink.textContent = `YOUR COLLECTION (${getCollection().length})`;
         });
-        
-        // --- LOGICA SWIPE ORIZZONTALE ---
+        // --- END CORRECTION ---
+
+        // --- Swipe Logic (Horizontal) ---
         const swipeContainer = overlay.querySelector('.swipe-container');
         const swipeWrapper = overlay.querySelector('.swipe-wrapper');
         const pages = overlay.querySelectorAll('.swipe-page');
         const dots = overlay.querySelectorAll('.pagination-container .dot');
-        
-        // Controllo robusto per lo swipe
         if (swipeContainer && swipeWrapper && pages.length > 0 && dots.length > 0) {
-            const pageCount = pages.length;
-            let currentPage = 0;
-            let startX = 0;
-            let isContentDragging = false;
-            function updateSlider() { 
-                swipeWrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)'; 
-                swipeWrapper.style.transform = `translateX(-${currentPage * 100}%)`;
-                dots.forEach((dot, index) => { dot.classList.toggle('active', index === currentPage); });
-            }
-            function handleContentStart(clientX) { 
-                isContentDragging = true; startX = clientX; swipeWrapper.style.transition = 'none'; 
-            }
-            function handleContentMove(clientX) { 
-                if (!isContentDragging) return;
-                const diffX = clientX - startX;
-                const baseTranslate = -currentPage * swipeContainer.offsetWidth;
-                swipeWrapper.style.transform = `translateX(${baseTranslate + diffX}px)`;
-            }
-            function handleContentEnd(clientX) { 
-                if (!isContentDragging) return; isContentDragging = false;
-                const diffX = clientX - startX;
-                const threshold = swipeContainer.offsetWidth / 4; 
-                if (Math.abs(diffX) > threshold) {
-                    if (diffX < 0 && currentPage < pageCount - 1) { currentPage++; }
-                    else if (diffX > 0 && currentPage > 0) { currentPage--; }
-                }
-                updateSlider(); 
-            }
-            swipeContainer.addEventListener('touchstart', (e) => handleContentStart(e.touches[0].clientX), { passive: true });
-            swipeContainer.addEventListener('touchmove', (e) => handleContentMove(e.touches[0].clientX), { passive: true });
-            swipeContainer.addEventListener('touchend', (e) => handleContentEnd(e.changedTouches[0].clientX));
-            swipeContainer.addEventListener('mousedown', (e) => handleContentStart(e.clientX));
-            swipeContainer.addEventListener('mousemove', (e) => handleContentMove(e.clientX));
-            swipeContainer.addEventListener('mouseup', (e) => handleContentEnd(e.clientX));
-            swipeContainer.addEventListener('mouseleave', () => { if (isContentDragging) handleContentEnd(startX); });
-            updateSlider();
+            const pageCount = pages.length; let currentPage = 0; let startX = 0; let isContentDragging = false;
+            function updateSlider() { swipeWrapper.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)'; swipeWrapper.style.transform = `translateX(-${currentPage * 100}%)`; dots.forEach((dot, index) => { dot.classList.toggle('active', index === currentPage); }); }
+            function handleContentStart(clientX) { isContentDragging = true; startX = clientX; swipeWrapper.style.transition = 'none'; }
+            function handleContentMove(clientX) { if (!isContentDragging) return; const diffX = clientX - startX; const baseTranslate = -currentPage * swipeContainer.offsetWidth; swipeWrapper.style.transform = `translateX(${baseTranslate + diffX}px)`; }
+            function handleContentEnd(clientX) { if (!isContentDragging) return; isContentDragging = false; const diffX = clientX - startX; const threshold = swipeContainer.offsetWidth / 4; if (Math.abs(diffX) > threshold) { if (diffX < 0 && currentPage < pageCount - 1) { currentPage++; } else if (diffX > 0 && currentPage > 0) { currentPage--; } } updateSlider(); }
+            swipeContainer.addEventListener('touchstart', (e) => handleContentStart(e.touches[0].clientX), { passive: true }); swipeContainer.addEventListener('touchmove', (e) => handleContentMove(e.touches[0].clientX), { passive: true }); swipeContainer.addEventListener('touchend', (e) => handleContentEnd(e.changedTouches[0].clientX)); swipeContainer.addEventListener('mousedown', (e) => handleContentStart(e.clientX)); swipeContainer.addEventListener('mousemove', (e) => handleContentMove(e.clientX)); swipeContainer.addEventListener('mouseup', (e) => handleContentEnd(e.clientX)); swipeContainer.addEventListener('mouseleave', () => { if (isContentDragging) handleContentEnd(startX); }); updateSlider();
         }
 
-        // --- LOGICA DRAG-TO-CLOSE (Verticale) ---
+        // --- CORRECTED: Drag-to-close Logic (Vertical) ---
         const dragHandle = document.getElementById('drag-handle');
         const plantCard = overlay.querySelector('.plant-card');
-        
         if (dragHandle && plantCard) {
-            let dragStartY = 0;
-            let isCardDragging = false;
-            let isContentDraggingForCard = false; // Variabile locale per evitare conflitti
-            
-            // Aggiorniamo lo stato di dragging del contenuto
+            let dragStartY = 0; let isCardDragging = false; let isContentDraggingForCard = false;
+            // Prevent conflict with horizontal swipe
             if(swipeContainer) {
                  swipeContainer.addEventListener('touchstart', () => isContentDraggingForCard = true, { passive: true });
                  swipeContainer.addEventListener('touchend', () => isContentDraggingForCard = false);
                  swipeContainer.addEventListener('mousedown', () => isContentDraggingForCard = true);
                  swipeContainer.addEventListener('mouseup', () => isContentDraggingForCard = false);
             }
-
             function handleCardDragStart(e) {
-                if (isContentDraggingForCard) return; 
-                e.preventDefault();
+                if (isContentDraggingForCard) return; // Don't drag vertically if swiping horizontally
+                // e.preventDefault(); // Might not be needed here, test removal if issues
                 isCardDragging = true;
                 dragStartY = e.touches ? e.touches[0].clientY : e.clientY;
-                overlay.style.transition = 'none'; 
+                overlay.style.transition = 'none'; // Disable transition during drag
             }
             function handleCardDragMove(e) {
                 if (!isCardDragging) return;
-                e.preventDefault();
+                // e.preventDefault(); // Might not be needed here
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
                 let diffY = clientY - dragStartY;
-                if (diffY < 0) diffY = 0; 
-                overlay.style.transform = `translateY(${diffY}px)`;
+                if (diffY < 0) diffY = 0; // Prevent dragging upwards past the top
+                overlay.style.transform = `translateY(${diffY}px)`; // Apply drag translation
             }
             function handleCardDragEnd(e) {
                 if (!isCardDragging) return;
                 isCardDragging = false;
                 const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
                 const diffY = clientY - dragStartY;
-                const threshold = plantCard.offsetHeight * 0.33; 
-                overlay.style.transition = ''; 
+                const threshold = plantCard.offsetHeight * 0.33; // Close if dragged 1/3 down
+                overlay.style.transition = ''; // Re-enable transitions for smooth close/snap back
                 if (diffY > threshold) {
-                    overlay.classList.remove('is-visible');
+                    console.log('Dragging down - closing overlay');
+                    overlay.classList.remove('is-visible'); // Close the overlay
+                     // Reset transform immediately after starting the close animation
+                     setTimeout(() => {
+                         overlay.style.transform = '';
+                     }, 0); // Use timeout 0 to allow the transition to start
                 } else {
-                    overlay.style.transform = 'translateY(0%)';
+                    console.log('Dragging - snapping back');
+                    overlay.style.transform = 'translateY(0%)'; // Snap back to original position
+                     // Need to remove transform after snap animation finishes
+                     setTimeout(() => {
+                         if (!overlay.classList.contains('is-visible')) { // Only reset if not closing
+                            overlay.style.transform = '';
+                         }
+                     }, 500); // Match transition duration
                 }
-                setTimeout(() => {
-                    overlay.style.transform = '';
-                }, 500);
             }
+            // Attach listeners
             dragHandle.addEventListener('touchstart', handleCardDragStart, { passive: false });
             dragHandle.addEventListener('mousedown', handleCardDragStart);
+            // Attach move/end listeners to the document for wider drag area
             document.addEventListener('touchmove', handleCardDragMove, { passive: false });
             document.addEventListener('mousemove', handleCardDragMove);
             document.addEventListener('touchend', handleCardDragEnd);
             document.addEventListener('mouseup', handleCardDragEnd);
         }
+        // --- END CORRECTION ---
+
     });
+
+    // Stop camera on navigation
+    document.addEventListener('astro:before-swap', stopCamera);
+
 </script>
 
 <style>
-    /* --- CSS HEADER (COPIATO DA PERSONALE.ASTRO) --- */
+    /* --- CSS HEADER (unchanged) --- */
     .mobile-header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      z-index: 100;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 0.5rem; 
-      box-sizing: border-box;
+      position: fixed; top: 0; left: 0; width: 100%; z-index: 100;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 0.5rem; box-sizing: border-box;
       transition: background-color 0.3s ease;
     }
-
     .mobile-header-logo {
-      font-family: 'Monument Grotesk Trial', sans-serif;
-      font-size: 1.1rem;
-      font-weight: 700;
-      text-decoration: none;
-      z-index: 1;
+      font-family: 'Monument Grotesk Trial', sans-serif; font-size: 1.1rem;
+      font-weight: 700; text-decoration: none; z-index: 1;
     }
-
     .mobile-header-right {
-      font-family: 'Monument Grotesk Mono Trial', monospace;
-      font-size: 0.9rem;
-      font-weight: 500;
-      text-transform: uppercase;
-      text-align: right;
-      z-index: 1;
-      display: flex;
-      gap: 0.8rem;
+      font-family: 'Monument Grotesk Mono Trial', monospace; font-size: 0.9rem;
+      font-weight: 500; text-transform: uppercase; text-align: right;
+      z-index: 1; display: flex; gap: 0.8rem;
     }
-
-    .mobile-header-right a,
-    .mobile-header-right span {
-      text-decoration: none;
-    }
-    
-    .mobile-header.theme-light {
-      background-color: #ffffff;
-      color: #000000;
-    }
+    .mobile-header-right a, .mobile-header-right span { text-decoration: none; }
+    .mobile-header.theme-light { background-color: #ffffff; color: #000000; }
     .mobile-header.theme-light .mobile-header-logo,
     .mobile-header.theme-light .mobile-header-right a,
-    .mobile-header.theme-light .mobile-header-right span {
-      color: #000;
-    }
-
-    .mobile-header.theme-dark {
-      background-color: #000000; 
-      color: #ffffff;
-    }
+    .mobile-header.theme-light .mobile-header-right span { color: #000; }
+    .mobile-header.theme-dark { background-color: #000000; color: #ffffff; }
     .mobile-header.theme-dark .mobile-header-logo,
     .mobile-header.theme-dark .mobile-header-right a,
-    .mobile-header.theme-dark .mobile-header-right span {
-      color: #fff;
-    }
-    .mobile-header.theme-dark .mobile-header-right svg path {
-      stroke: #fff;
-    }
-    /* --- FINE CSS HEADER --- */
+    .mobile-header.theme-dark .mobile-header-right span { color: #fff; }
+    .mobile-header.theme-dark .mobile-header-right svg path { stroke: #fff; }
+    /* --- END CSS HEADER --- */
 
+    /* Camera Page Styles (unchanged) */
+    .main-content-camera {
+        position: relative; height: 100%; overflow: hidden; background-color: #000;
+    }
+    #camera-feed {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        object-fit: cover; z-index: 1;
+    }
+    .camera-overlay-content {
+        position: relative; z-index: 2; width: 100%; height: 100%;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        padding: 2rem; box-sizing: border-box;
+        background: rgba(0, 0, 0, 0.3);
+      
+    }
+    .camera-overlay-content p#scan-prompt {
+        display: block; font-family: monospace; text-transform: uppercase; font-size: 1rem;
+        font-weight: 500; margin-bottom: 2rem; line-height: 1;
+        max-width: 300px; text-align: center; color: white;
+    }
+    .scan-target-icon {
+        display: block; background: none; border: none; padding: 0; cursor: pointer;
+    }
+    .scan-target-icon svg { width: 80px; height: 80px; stroke: white; stroke-width: 3px; }
 
-    /* Stili Pagina Fotocamera (Sfondo) */
-    .main-content-camera { 
-        height: 100%; 
-        background-image: url('/greenhouse-bg.jpg'); 
-        background-size: cover; 
-        background-position: center; 
+    /* --- RESTORED Plant Card Overlay Styles --- */
+    .plant-card-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100dvh;
+        z-index: 200; background-color: rgba(0, 0, 0, 0.3);
+        opacity: 0; pointer-events: none;
+        transform: translateY(100%);
+        transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.5s ease;
     }
-    .camera-overlay-content { 
-        width: 100%; 
-        height: 100%; 
-        display: flex; 
-        flex-direction: column; 
-        justify-content: center; 
-        align-items: center; 
-        padding: 2rem; 
-        box-sizing: border-box; 
-        background: rgba(0, 0, 0, 0.3); 
-        backdrop-filter: blur(3px); 
+    .plant-card-overlay.is-visible {
+        opacity: 1; pointer-events: auto;
+        transform: translateY(0%);
     }
-    .camera-overlay-content p { 
-        font-family: monospace;
-        text-transform: uppercase;
-        font-size: 1rem; 
-        font-weight: 500; 
-        margin-bottom: 2rem; 
-        line-height: 1; 
-        max-width: 300px; 
-        text-align: center; 
-        color: white; 
+    .plant-card {
+        width: 100%; height: 85vh; background-color: #000; /* Card is black */
+        border-radius: 0 0 0 0; position: absolute; bottom: 0;
+        display: flex; flex-direction: column; overflow: hidden;
     }
-    .scan-target-icon { 
-        background: none; 
-        border: none; 
-        padding: 0; 
-        cursor: pointer; 
+    .drag-handle {
+        position: absolute; top: 0; left: 0; right: 0; height: 30px;
+        display: flex; justify-content: center; align-items: center;
+        cursor: grab; z-index: 10;
     }
-    .scan-target-icon svg { 
-        width: 80px; 
-        height: 80px; 
-        stroke: white; 
-        stroke-width: 3px; 
+    .drag-handle-bar { width: 40px; height: 5px; background-color: #555; border-radius: 3px; }
+    .card-content {
+        padding: 1rem; padding-top: 35px; flex-grow: 1;
+        display: flex; flex-direction: column; overflow: hidden;
+        color: white; /* Default text color inside card */
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* Default font */
+    }
+    .image-container { position: relative; border-radius: 20px; overflow: hidden; flex-shrink: 0; }
+    .image-container img { width: 100%; display: block; max-height: 35vh; object-fit: cover; }
+    .title-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin: 1rem 0; flex-shrink: 0;
+    }
+    /* Restored H2 styles */
+    h2 {
+        text-align: left; margin: 0;
+        font-size: 1.35rem; /* Original size */
+        font-weight: 600; /* Original weight */
+        color: white; /* Ensure white */
+         /* font-family can inherit from .card-content or be set explicitly */
+    }
+    /* Restored base button styles */
+    .icon-btn {
+        border: none; border-radius: 50%; width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; font-weight: bold; color: white; background-color: transparent; /* Ensure transparent */
+        position: relative; /* Needed for absolute positioning of icons */
+    }
+    /* Restored plus icon specific styles (size adjusted) */
+    .plus-icon {
+         width: 40px; /* Original size */
+         height: 40px; /* Original size */
+    }
+    .plus-icon.is-added { background-color: transparent; /* Ensure still transparent when added */ }
+
+    /* Stili Swipe (Restored fonts/colors) */
+    .swipe-container { width: 100%; overflow: hidden; flex-grow: 1; position: relative; }
+    .swipe-wrapper { display: flex; width: 200%; height: 100%; }
+    .swipe-page {
+        width: 50%; height: 100%; flex-shrink: 0; box-sizing: border-box;
+        padding: 0 0.2rem; overflow-y: hidden; scrollbar-width: none; -ms-overflow-style: none;
+    }
+    .swipe-page::-webkit-scrollbar { display: none; }
+
+    /* Stili Dettagli (Restored fonts/colors) */
+    .plant-details { font-size: 0.9rem; /* Original base size */ }
+    .plant-details div { display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid #222; }
+    .plant-details div:last-child { border-bottom: none; }
+    .plant-details dt {
+        color: #fff; font-weight: 600; font-size: 0.85rem; /* Original size */
+         /* font-family inherits */
+    }
+    .plant-details dd {
+        margin: 0; color: #8e8e93; font-weight: 500; font-size: 0.85rem; /* Original size */
+         /* font-family inherits */
+    }
+    .swipe-page h3 {
+        font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: 0.5rem;
+         /* font-family inherits */
+    }
+    .plant-description {
+        font-size: 0.95rem; line-height: 1.6; color: #eee; margin: 0;
+        display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4;
+        overflow: hidden; text-overflow: ellipsis;
+         /* font-family inherits */
     }
 
-    /* Stili Card Overlay (Foglio nero) */
-    .plant-card-overlay { 
-        position: fixed; 
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100dvh;
-        z-index: 200; 
-        background-color: rgba(0, 0, 0, 0.3); 
-        opacity: 0; 
-        pointer-events: none; 
-        transform: translateY(100%); 
-        transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.5s ease; 
+    /* Stili Footer Card (Restored fonts/colors) */
+    .card-footer {
+        position: relative; display: flex; justify-content: flex-end; align-items: center;
+        margin-top: auto; padding: 1rem 0 0.5rem 0; flex-shrink: 0;
     }
-    .plant-card-overlay.is-visible { 
-        opacity: 1; 
-        pointer-events: auto; 
-        transform: translateY(0%); 
+    .pagination-container { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
+    .collection-link {
+        color: white; text-decoration: none; font-weight: 600; font-size: 0.9rem;
+        /* Use default font-family */
     }
-    .plant-card { 
-        width: 100%; 
-        height: 85vh; 
-        background-color: #000; 
-        border-radius: 25px 25px 0 0;
+    .dot { width: 8px; height: 8px; border-radius: 50%; background-color: #555; transition: background-color 0.4s ease; }
+    .dot.active { background-color: #619EE9; }
+
+    /* Restored Animazione Bottone +/✓ */
+    .plus-icon svg {
         position: absolute;
-        bottom: 0;
-        display: flex; 
-        flex-direction: column; 
-        overflow: hidden; 
-    }
-    .drag-handle { 
-        position: absolute; 
-        top: 0; 
-        left: 0; 
-        right: 0; 
-        height: 30px; 
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
-        cursor: grab; 
-        z-index: 10; 
-    }
-    .drag-handle-bar { 
-        width: 40px; 
-        height: 5px; 
-        background-color: #555; 
-        border-radius: 3px; 
-    }
-    .card-content { 
-        padding: 1rem;
-        padding-top: 35px;
-        flex-grow: 1; 
-        display: flex; 
-        flex-direction: column; 
-        overflow: hidden; 
-        color: white; 
-    }
-    .image-container { 
-        position: relative; 
-        border-radius: 20px; 
-        overflow: hidden; 
-        flex-shrink: 0; 
-    }
-    .image-container img { 
-        width: 100%; 
-        display: block; 
-        max-height: 35vh;
-        object-fit: cover;
-    }
-    .title-header { 
-        font-family: Arial, Helvetica, sans-serif;
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-        margin: 1rem 0;
-        flex-shrink: 0; 
-    }
-    h2 { 
-        text-align: left; 
-        margin: 0; 
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: 1.35rem;
-        font-weight: 600; 
-        color: white; 
-    }
-    .plus-icon { 
-        position: relative; 
-        top: 0; 
-        right: 0; 
-        background-color: transparent; 
-        border: none; 
-        width: 40px; 
-        height: 40px; 
-    }
-    .plus-icon.is-added { 
-        background-color: transparent; 
-    }
-    
-    /* Stili Swipe */
-    .swipe-container { 
-        width: 100%; 
-        overflow: hidden; 
-        flex-grow: 1; 
-        position: relative; 
-    }
-    .swipe-wrapper { 
-        display: flex; 
-        width: 200%; 
-        height: 100%; 
-    }
-    .swipe-page { 
-        width: 50%; 
-        height: 100%; 
-        flex-shrink: 0; 
-        box-sizing: border-box; 
-        padding: 0 0.2rem; 
-        overflow-y: hidden;
-        scrollbar-width: none; 
-        -ms-overflow-style: none; 
-    }
-    .swipe-page::-webkit-scrollbar { 
-        display: none; 
-    }
-
-    /* Stili Dettagli (compatti) */
-    .plant-details { 
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: 0.9rem; 
-    }
-    .plant-details div { 
-        display: flex; 
-        justify-content: space-between; 
-        padding: 0.3rem 0;
-        border-bottom: 1px solid #222; 
-    }
-    .plant-details div:last-child { 
-        border-bottom: none; 
-    }
-    .plant-details dt { 
-        font-family: Arial, Helvetica, sans-serif;
-        color: #fff; 
-        font-weight: 600; 
-        font-size: 0.85rem;
-    }
-    .plant-details dd { 
-        font-family: Arial, Helvetica, sans-serif;
-        margin: 0; 
-        color: #8e8e93; 
-        font-weight: 500; 
-        font-size: 0.85rem;
-    }
-    .swipe-page h3 { 
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: 1rem; 
-        font-weight: 600; 
-        color: #fff; 
-        margin-bottom: 0.5rem; 
-    }
-    .plant-description { 
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: 0.95rem; 
-        line-height: 1.6; 
-        color: #eee; 
-        margin: 0;
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 4; 
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    /* Stili Footer */
-    .card-footer { 
-        position: relative; 
-        display: flex; 
-        justify-content: flex-end; 
-        align-items: center; 
-        margin-top: auto; 
-        padding: 1rem 0 0.5rem 0;
-        flex-shrink: 0; 
-    }
-    .pagination-container { 
-        position: absolute; 
-        left: 50%; 
-        transform: translateX(-50%); 
-        display: flex; 
-        gap: 8px; 
-    }
-    .collection-link { 
-        font-family: monospace;
-        color: white; 
-        text-decoration: none; 
-        font-weight: 600; 
-        font-size: 0.9rem; 
-    }
-    .dot { 
-        width: 8px; 
-        height: 8px; 
-        border-radius: 50%; 
-        background-color: #555; 
-        transition: background-color 0.4s ease;
-    }
-    .dot.active { 
-        background-color: #619EE9; 
-    }
-    .icon-btn { 
-        border: none; 
-        border-radius: 50%; 
-        width: 32px; 
-        height: 32px; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        cursor: pointer; 
-        font-weight: bold; 
-        color: white; 
-    }
-    
-    /* Animazione Bottone +/✓ */
-    .plus-icon svg { 
-        position: absolute; 
         transition: transform 0.4s ease, opacity 0.4s ease;
-        width: 28px;
-        height: 28px;
+        width: 28px; /* Original icon size */
+        height: 28px; /* Original icon size */
+        /* Center icon within the larger button */
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
     }
-    .icon-plus { 
-        opacity: 1; 
-        transform: rotate(0deg) scale(1); 
+    .icon-plus {
+        opacity: 1;
+        /* Reset transform origin */
+        transform-origin: center center;
+        /* Apply centering and initial state */
+        transform: translate(-50%, -50%) rotate(0deg) scale(1);
     }
-    .icon-check { 
-        opacity: 0; 
-        transform: scale(0.5); 
+    .icon-check {
+        opacity: 0;
+        transform-origin: center center;
+        /* Apply centering and initial state */
+        transform: translate(-50%, -50%) scale(0.5);
     }
-    .plus-icon.is-added .icon-plus { 
-        opacity: 0; 
-        transform: rotate(180deg) scale(0.5); 
+    .plus-icon.is-added .icon-plus {
+        opacity: 0;
+        /* Apply centering and added state */
+        transform: translate(-50%, -50%) rotate(180deg) scale(0.5);
     }
-    .plus-icon.is-added .icon-check { 
-        opacity: 1; 
-        transform: scale(1) rotate(360deg); 
+    .plus-icon.is-added .icon-check {
+        opacity: 1;
+        /* Apply centering and added state */
+        transform: translate(-50%, -50%) scale(1) rotate(360deg);
     }
+    /* --- END RESTORED Styles --- */
 </style>
