@@ -67,40 +67,49 @@ const staticPlants = [
         return data ? JSON.parse(data) : [];
     }
 
-    // !!! --- MODIFICA QUI --- !!!
-    // Sostituito 'DOMContentLoaded' con 'astro:page-load'
     document.addEventListener('astro:page-load', () => {
         const dynamicCollection = getCollection();
         const staticCollection = staticPlants; 
         const fullListToDisplay = [...staticCollection, ...dynamicCollection];
-        const collectionCount = dynamicCollection.length;
+        
+        // Non usiamo più collectionCount, usiamo fullListToDisplay.length
+        // const collectionCount = dynamicCollection.length;
+        
         const listContainer = document.getElementById('collection-list');
         const emptyMessage = document.querySelector('.empty-message');
         
         const collectionCountHeader = document.getElementById('collection-header-link');
 
         if (collectionCountHeader) {
+          // L'header mostra sempre "YOUR COLLECTION" in questo layout
           collectionCountHeader.textContent = `YOUR COLLECTION`;
         }
         
-        // Controlli per assicurarsi che gli elementi esistano
-        if (emptyMessage) emptyMessage.style.display = 'block'; 
-        if (listContainer) {
-            listContainer.style.display = 'block';
-            listContainer.innerHTML = ''; // Pulisci la lista prima di riempirla
+        // --- MODIFICA CHIAVE QUI ---
+        // Se ci sono elementi da visualizzare, mostra la lista e nascondi il messaggio vuoto
+        if (fullListToDisplay.length > 0) {
+            if (emptyMessage) emptyMessage.style.display = 'none'; // NASCONDI il messaggio
+            if (listContainer) {
+                listContainer.style.display = 'block'; // MOSTRA la lista
+                listContainer.innerHTML = ''; // Pulisci la lista
 
-            fullListToDisplay.forEach(plantName => {
-                const itemWrapper = document.createElement('div');
-                itemWrapper.className = 'location-item'; 
-                const detailsDiv = document.createElement('div');
-                detailsDiv.className = 'item-details'; 
-                const plantElement = document.createElement('h2');
-                plantElement.className = 'item-name';
-                plantElement.textContent = plantName;
-                detailsDiv.appendChild(plantElement);
-                itemWrapper.appendChild(detailsDiv);
-                listContainer.appendChild(itemWrapper);
-            });
+                fullListToDisplay.forEach(plantName => {
+                    const itemWrapper = document.createElement('div');
+                    itemWrapper.className = 'location-item'; 
+                    const detailsDiv = document.createElement('div');
+                    detailsDiv.className = 'item-details'; 
+                    const plantElement = document.createElement('h2');
+                    plantElement.className = 'item-name';
+                    plantElement.textContent = plantName;
+                    detailsDiv.appendChild(plantElement);
+                    itemWrapper.appendChild(detailsDiv);
+                    listContainer.appendChild(itemWrapper);
+                });
+            }
+        } else {
+             // Altrimenti, assicurati che il messaggio vuoto sia visibile
+            if (emptyMessage) emptyMessage.style.display = 'block';
+            if (listContainer) listContainer.style.display = 'none'; // NASCONDI la lista
         }
         
         const uploadInput = document.getElementById('photo-upload-input');
@@ -236,6 +245,7 @@ const staticPlants = [
 
   .content-area {
     padding: 8rem 0 4rem 0; 
+    border: #ce0000;
   }
 
   .empty-message,
@@ -286,8 +296,10 @@ const staticPlants = [
   }
 
   .collection-list {
-    display: none; 
+    display: block; 
     margin-top: 2rem;
+    margin-bottom: 0; 
+  padding: 0;
   }
 
   .location-item {
@@ -295,13 +307,15 @@ const staticPlants = [
     justify-content: space-between;
     align-items: flex-start;
     padding: 1.5rem;
-    border-bottom: 1px solid #eee;
+    background-color: pink;
+    border-bottom: 4px solid #ff1d1d;
     text-decoration: none;
-    color: inherit;
+    color: #000;
+  
   }
   
   .location-item:first-child {
-      border-top: 1px solid #eee;
+      border-top: 4px solid #ce0000;
   }
 
   .item-details {
@@ -311,7 +325,7 @@ const staticPlants = [
   .item-name {
     font-size: 1.5rem; 
     font-weight: 600;
-    margin: 0 0 0.25rem 0;
+    margin: 0;
     color: #000;
   }
 
