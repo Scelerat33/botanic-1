@@ -4,7 +4,7 @@ import MobileLayout from '../layouts/MobileLayout.astro';
 <MobileLayout>
   <div class="page-wrapper">
     
-    <header class="mobile-header theme-dark" >
+    <header class="mobile-header theme-dark" transition:persist>
       <a href="/" class="mobile-header-logo" transition:name="logo-gba">GBA</a>
       <div class="mobile-header-right">
         <a href="/personale" aria-label="Torna alla collezione">
@@ -30,7 +30,7 @@ import MobileLayout from '../layouts/MobileLayout.astro';
                 <div class="image-slide"><img src="/MACRO196.jpg" alt="Pianta Grassa" class="featured-image"/></div>
                 <div class="image-slide"><img src="/MACRO258.jpg" alt="Description for image 5" class="featured-image"/></div>
                 <div class="image-slide"><img src="/MACRO245.jpg" alt="Description for image 6" class="featured-image"/></div>
-                <div class="image-slide"><img src="/MACRO258.jpg" alt="Description for image 7" class="featured-image"/></div>
+                <div class="image-slide"><img src="/MACRO292.jpg" alt="Description for image 7" class="featured-image"/></div>
                 <div class="image-slide"><img src="/MACRO376.jpg" alt="Description for image 8" class="featured-image"/></div>
                 <div class="image-slide"><img src="/papiro-egiziano.jpg" alt="Description for image 9" class="featured-image"/></div>
                  <div class="image-slide"><img src="/MACRO484.jpg" alt="Description for image 10" class="featured-image"/></div>
@@ -148,7 +148,7 @@ import MobileLayout from '../layouts/MobileLayout.astro';
             const scale = window.devicePixelRatio * 2;
             html2canvas(cardToDownload, { allowTaint: true, useCORS: true, backgroundColor: null, scale: scale, width: cardToDownload.offsetWidth, height: cardToDownload.offsetHeight })
             .then(canvas => {
-                const imageURL = canvas.toDataURL("image/png"); const downloadLink = document.createElement('a'); downloadLink.href = imageURL; downloadLink.download = `urbino-botanic-wrapped-img${currentImageIndex+1}.png`;
+                const imageURL = canvas.toDataURL("image/jpg"); const downloadLink = document.createElement('a'); downloadLink.href = imageURL; downloadLink.download = `urbino-botanic-wrapped-img${currentImageIndex+1}.jpg`;
                 document.body.appendChild(downloadLink); downloadLink.click(); document.body.removeChild(downloadLink);
             }).catch(error => { console.error("Error capturing card with html2canvas:", error); });
         }
@@ -232,6 +232,7 @@ import MobileLayout from '../layouts/MobileLayout.astro';
         width: 100%;
         height: 100vh;
         background: #000;
+        
         color: white;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         overflow: hidden;
@@ -429,6 +430,7 @@ import MobileLayout from '../layouts/MobileLayout.astro';
     }
     .social-item-link { 
         text-decoration: none; 
+       
     }
     .social-item-button { 
         background: none; 
@@ -436,6 +438,7 @@ import MobileLayout from '../layouts/MobileLayout.astro';
         padding: 0; 
         cursor: pointer; 
         text-align: inherit; 
+        
         font: inherit; 
     }
     .social-item { 
@@ -446,6 +449,7 @@ import MobileLayout from '../layouts/MobileLayout.astro';
         font-size: 0.75rem; 
         text-align: center; 
         gap: 0.5rem; 
+         font-family: Arial, Helvetica, sans-serif;
     }
     .social-icon { 
         width: 50px; 

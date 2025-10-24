@@ -1,62 +1,20 @@
 ---
 import MobileLayout from '../layouts/MobileLayout.astro';
 
-// Dati d'esempio
+// Dati d'esempio (invariati)
 const locations = [
-  { 
-    name: "Padua Botanical Garden", 
-    city: "Padua", 
-    country: "Italy", 
-    coord1: "43°43'38.86\"N", 
-    coord2: "12°38'11.98\"E",
-    isClickable: false 
-  },
-  { 
-    name: "Urbino Botanical Garden", 
-    city: "Urbino", 
-    country: "Italy", 
-    coord1: "43°43'38.86\"N", 
-    coord2: "12°38'11.98\"E",
-    isClickable: true,
-    href: "/urbino"
-  },
-  { 
-    name: "Kirstenbosch Garden", 
-    city: "Cape Town", 
-    country: "South Africa", 
-    coord1: "43°43'38.86\"N", 
-    coord2: "12°38'11.98\"E",
-    isClickable: false 
-  },
-  { 
-    name: "Giardini Botanici Hanbury", 
-    city: "Ventimiglia", 
-    country: "Liguria", 
-    coord1: "43°43'38.86\"N", 
-    coord2: "12°38'11.98\"E",
-    isClickable: false 
-  },
-  { 
-    name: "Orto Botanico di Brera", 
-    city: "Milan", 
-    country: "Italy", 
-    coord1: "43°43'38.86\"N", 
-    coord2: "12°38'11.98\"E",
-    isClickable: false 
-  },
-  { 
-    name: "Singapore Botanic Garden", 
-    city: "Singapore", 
-    country: "", 
-    coord1: "43°43'38.86\"N", 
-    coord2: "12°38'11.98\"E",
-    isClickable: false 
-  },
+  { name: "Padua Botanical Garden", city: "Padua", country: "Italy", coord1: "43°43'38.86\"N", coord2: "12°38'11.98\"E", isClickable: false },
+  { name: "Urbino Botanical Garden", city: "Urbino", country: "Italy", coord1: "43°43'38.86\"N", coord2: "12°38'11.98\"E", isClickable: true, href: "/urbino" },
+  { name: "Kirstenbosch Garden", city: "Cape Town", country: "South Africa", coord1: "43°43'38.86\"N", coord2: "12°38'11.98\"E", isClickable: false },
+  { name: "Giardini Botanici Hanbury", city: "Ventimiglia", country: "Liguria", coord1: "43°43'38.86\"N", coord2: "12°38'11.98\"E", isClickable: false },
+  { name: "Orto Botanico di Brera", city: "Milan", country: "Italy", coord1: "43°43'38.86\"N", coord2: "12°38'11.98\"E", isClickable: false },
+  { name: "Singapore Botanic Garden", city: "Singapore", country: "", coord1: "43°43'38.86\"N", coord2: "12°38'11.98\"E", isClickable: false },
 ];
 ---
 <MobileLayout>
   <div class="page-wrapper-locations">
-    
+
+    {/* Header Corretto */}
     <header class="mobile-header theme-dark" transition:persist>
       <a href="/" class="mobile-header-logo" transition:name="logo-gba">GBA</a>
       <div class="mobile-header-right">
@@ -66,32 +24,36 @@ const locations = [
 
     <main class="locations-list">
       {locations.map(loc => (
-        loc.isClickable ? (
-          <a href={loc.href} class="location-item clickable">
+        // Div esterno per layout
+        <div class="location-item">
+          {loc.isClickable ? (
+            // Link solo sui dettagli
+            <a href={loc.href} class="item-details item-details-link">
+              <h2 class="item-name">{loc.name}</h2>
+              <span class="item-city">{loc.city}{loc.country && `, ${loc.country}`}</span>
+            </a>
+          ) : (
+            // Div se non cliccabile
             <div class="item-details">
               <h2 class="item-name">{loc.name}</h2>
               <span class="item-city">{loc.city}{loc.country && `, ${loc.country}`}</span>
             </div>
-            <div class="item-coords">
-              <span>{loc.coord1}</span>
-              <span>{loc.coord2}</span>
-            </div>
+          )}
+          {/* Link coordinate separato */}
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.coord1)},${encodeURIComponent(loc.coord2)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="item-coords coords-link"
+          >
+            <span>{loc.coord1}</span>
+            <span>{loc.coord2}</span>
           </a>
-        ) : (
-          <div class="location-item">
-            <div class="item-details">
-              <h2 class="item-name">{loc.name}</h2>
-              <span class="item-city">{loc.city}{loc.country && `, ${loc.country}`}</span>
-            </div>
-            <div class="item-coords">
-              <span>{loc.coord1}</span>
-              <span>{loc.coord2}</span>
-            </div>
-          </div>
-        )
+        </div>
       ))}
     </main>
 
+    {/* Footer Corretto */}
     <footer class="page-footer">
         <a href="/scanner" class="footer-link">PLANTS SCANNER</a>
         <a href="/personale" class="footer-link">YOUR COLLECTION</a>
@@ -100,8 +62,9 @@ const locations = [
   </div>
 </MobileLayout>
 
+{/* CSS COMPLETO E CORRETTO */}
 <style>
-  /* --- CSS HEADER --- */
+  /* --- CSS HEADER (Ripristinato) --- */
   .mobile-header {
     position: fixed;
     top: 0;
@@ -111,10 +74,9 @@ const locations = [
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 0.5rem; 
+    padding: 1rem 0.5rem;
     box-sizing: border-box;
     transition: background-color 0.3s ease;
-    /* Rimosso border-bottom da qui */
   }
 
   .mobile-header-logo {
@@ -140,11 +102,11 @@ const locations = [
   .mobile-header-right span {
     text-decoration: none;
   }
-  
+
   .mobile-header.theme-light {
     background-color: #ffffff;
     color: #000000;
-    border-bottom: 1px solid #eee; /* Aggiunto border-bottom SOLO qui */
+    border-bottom: 1px solid #eee;
   }
   .mobile-header.theme-light .mobile-header-logo,
   .mobile-header.theme-light .mobile-header-right a,
@@ -153,7 +115,7 @@ const locations = [
   }
 
   .mobile-header.theme-dark {
-    background-color: #000000; 
+    background-color: #000000;
     color: #ffffff;
   }
   .mobile-header.theme-dark .mobile-header-logo,
@@ -170,39 +132,46 @@ const locations = [
   .page-wrapper-locations {
     position: relative;
     width: 100%;
-    min-height: 100%;
+    min-height: 100%; /* Usa min-height per lo scroll */
     background-color: #ffffff;
     color: #000000;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    /* overflow: auto; NON serve qui, lo gestisce il browser */
   }
 
-  /* --- Lista Location --- */
+  /* --- Lista Location (Ripristinato padding) --- */
   .locations-list {
-    /* MODIFICA 2: Ridotto padding-top da 8rem a 4rem */
-    padding: 3rem 0 6rem 0;
+    padding: 3rem 0 6rem 0; /* Padding originale */
   }
-  
+
   .location-item {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     padding: 1.5rem;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #eee; /* Filetto */
     text-decoration: none;
     color: inherit;
   }
-
-  .location-item.clickable {
-    cursor: pointer;
-  }
-  .location-item.clickable:hover {
-    background-color: #f9f9f9;
-  }
+  /* Rimosso hover dall'item intero */
 
   .item-details {
     display: flex;
     flex-direction: column;
   }
+
+  /* Stili per link dettagli (nuovo) */
+  .item-details-link,
+  .item-details-link:link,
+  .item-details-link:visited {
+      color: inherit;
+      text-decoration: none;
+      cursor: pointer;
+  }
+  .item-details-link:hover .item-name {
+      text-decoration: underline;
+  }
+
   .item-name {
     font-size: 1.5rem;
     font-weight: 600;
@@ -214,6 +183,7 @@ const locations = [
     color: #666;
   }
 
+  /* Stili Coordinate (Ripristinati) */
   .item-coords {
     font-size: 0.9rem;
     color: #666;
@@ -224,9 +194,22 @@ const locations = [
     flex-direction: column;
     align-items: flex-end;
   }
+  /* Stili per link coordinate (nuovo) */
+  .coords-link,
+  .coords-link:link,
+  .coords-link:visited {
+    color: #666;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .coords-link:hover {
+     text-decoration: underline;
+     color: #333;
+  }
 
+  /* Footer (Ripristinato) */
   .page-footer {
-    position: absolute; 
+    position: absolute; /* Posizionato in fondo a page-wrapper */
     bottom: 2.5rem;
     left: 1.5rem;
     right: 1.5rem;
@@ -239,9 +222,10 @@ const locations = [
   .footer-link:visited,
   .footer-link:hover,
   .footer-link:active {
-    color: #000;
+    color: #000; /* Testo nero su sfondo bianco */
     text-decoration: none !important;
     font-weight: 600;
+    font-family: monospace;
     font-size: 0.9rem;
     text-transform: uppercase;
   }

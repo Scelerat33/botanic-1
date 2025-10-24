@@ -3,14 +3,11 @@ import MobileLayout from '../layouts/MobileLayout.astro';
 
 // --- DEFINIZIONE DATI ---
 // Per risolvere il "ReferenceError", definiamo 'items' qui.
-// SOSTITUISCI QUESTO ARRAY con il tuo sistema di recupero dati (es. Astro.glob)
-// Assicurati che ogni oggetto abbia una proprietà 'image' con un percorso valido.
 const items = [
   { image: '/images/archivio/fiore-01.jpg' },
   { image: '/images/archivio/fiore-02.jpg' },
   { image: '/images/archivio/fiore-03.jpg' },
   { image: '/images/archivio/fiore-04.jpg' },
-  // Aggiungi quante immagini vuoi...
 ];
 
 // Controlla se 'items' è un array (buona prassi)
@@ -22,6 +19,13 @@ const imageInterval = 100; // Intervallo in millisecondi
 ---
 
 <MobileLayout>
+
+  <header class="mobile-header theme-dark">
+    <a href="/" class="mobile-header-logo">GBA</a>
+    <div class="mobile-header-right">
+      </div>
+  </header>
+  
   <div class="landing-wrapper">
 
     {items.length > 0 ? (
@@ -40,29 +44,77 @@ const imageInterval = 100; // Intervallo in millisecondi
       </div>
     )}
 
-    <div class="overlay-content">
-      <a href="/" class="top-left-title">GBA</a>
-      <a href="/scanner" class="middle-left-link">Plants Scanner</a>
-      <a href="/personale" class="middle-right-link">Your Collection</a>
+    <div class="overlay-content centered-content">
+      <a href="/scanner" class="scanner-link">Plants Scanner</a>
+      <a href="/personale" class="collection-link">YOUR COLLECTION</a>
     </div>
 
   </div>
 </MobileLayout>
 
 <style>
+  /* --- CSS HEADER (GBA in alto a sinistra) --- */
+  .mobile-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center; 
+    padding: 1rem 0.5rem; 
+    box-sizing: border-box;
+  }
+
+  .mobile-header-logo {
+    font-family: 'Monument Grotesk Trial', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-decoration: none;
+    z-index: 1;
+  }
+
+  /* Questo è mantenuto solo per l'allineamento Flexbox, ma è vuoto */
+  .mobile-header-right {
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    text-align: right;
+    z-index: 1;
+    display: flex;
+    gap: 0.8rem;
+    /* CHIAVE: Nessun allineamento verticale. Resta in alto. */
+    transform: none; 
+    margin-top: 0; 
+  }
+  
+  /* Stili per il tema scuro */
+  .mobile-header.theme-dark {
+    background-color: transparent; 
+    color: #ffffff;
+  }
+  .mobile-header.theme-dark .mobile-header-logo,
+  .mobile-header.theme-dark .mobile-header-right a,
+  .mobile-header.theme-dark .mobile-header-right span {
+    color: #fff;
+  }
+  /* --- FINE CSS HEADER --- */
+
+
   /* Contenitore principale che riempie il MobileLayout */
   .landing-wrapper {
     position: relative;
     width: 100%;
-    height: 100%; /* Occupa il 100% dell'altezza del layout */
+    height: 100%; 
     overflow: hidden;
-    background-color: #000; /* Sfondo nero se le immagini non caricano */
+    background-color: #000; 
   }
 
-  /* Contenitore per le immagini di sfondo */
+  /* Immagini di sfondo */
   .rapid-sequence-background {
     position: absolute;
-    inset: 0; /* top/right/bottom/left: 0 */
+    inset: 0; 
     z-index: 1;
   }
   .background-image {
@@ -70,68 +122,51 @@ const imageInterval = 100; // Intervallo in millisecondi
     inset: 0;
     width: 100%; 
     height: 100%;
-    object-fit: cover; /* Copre tutto lo spazio senza distorcere */
+    object-fit: cover; 
     opacity: 0;
-    transition: none; /* Nessuna transizione per l'effetto rapido */
+    transition: none; 
   }
   .background-image.is-visible { 
     opacity: 1; 
-  }
-
-  /* Messaggio di errore fallback */
-  .error-message {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #555;
-    font-family: sans-serif;
   }
 
   /* Contenitore per i testi sovrapposti */
   .overlay-content {
     position: absolute;
     inset: 0;
-    z-index: 2; /* Sta sopra lo sfondo */
+    z-index: 2; 
     color: white;
     font-family: monospace;
-    
+    padding: 0 0.5rem; /* Padding laterale per allineamento bordi */
+    pointer-events: none; /* Permette interazione con gli elementi figli */
   }
 
-  /* Stile comune per i link sovrapposti */
-  .overlay-content a {
-    color: inherit;
+  /* NUOVO CONTENITORE PER CENTRATURA */
+  .centered-content {
+    display: flex;
+    justify-content: space-between; /* Allinea a sinistra e a destra */
+    align-items: center; /* CHIAVE: Centra verticalmente */
+  }
+
+  /* Stili comuni ai link Plants Scanner e Your Collection */
+  .scanner-link,
+  .collection-link {
+    color: white;
     text-decoration: none;
-    position: absolute; /* Chiave per il posizionamento libero */
     text-transform: uppercase;
-    font-weight: 600;
+    font-family: 'Monument Grotesk Mono Trial', monospace;
+    font-weight: 500;
     font-size: 0.9rem;
+    pointer-events: auto; /* Riabilita l'interazione solo per i link */
+  }
   
-  }
-
-  /* Link "GBA" in alto a sinistra */
-  .top-left-title {
-    top: 1rem;
-    left: 0.5rem;
-    font-size: 1.1rem;
-    font-weight: 700;
-    font-family: 'Monument Grotesk Trial', sans-serif;
-  }
-
-  /* Link "PLANTS SCANNER" a sinistra, a metà altezza */
+  /* Rimuovo gli stili non più necessari */
+  .top-left-title,
+  .middle-right-link,
   .middle-left-link {
-    top: 50%;
-    left: 1.5rem;
-    transform: translateY(-50%); /* Centra verticalmente */
+    display: none; 
   }
-
-  /* Link "YOUR COLLECTION" a destra, a metà altezza */
-  .middle-right-link {
-    top: 50%;
-    right: 1.5rem;
-    transform: translateY(-50%); /* Centra verticalmente */
-    text-align: right;
-  }
+  
 </style>
 
 <script define:vars={{ imageInterval }}>

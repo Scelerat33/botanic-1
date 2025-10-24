@@ -72,26 +72,20 @@ const staticPlants = [
         const staticCollection = staticPlants; 
         const fullListToDisplay = [...staticCollection, ...dynamicCollection];
         
-        // Non usiamo più collectionCount, usiamo fullListToDisplay.length
-        // const collectionCount = dynamicCollection.length;
-        
         const listContainer = document.getElementById('collection-list');
         const emptyMessage = document.querySelector('.empty-message');
         
         const collectionCountHeader = document.getElementById('collection-header-link');
 
         if (collectionCountHeader) {
-          // L'header mostra sempre "YOUR COLLECTION" in questo layout
           collectionCountHeader.textContent = `YOUR COLLECTION`;
         }
         
-        // --- MODIFICA CHIAVE QUI ---
-        // Se ci sono elementi da visualizzare, mostra la lista e nascondi il messaggio vuoto
         if (fullListToDisplay.length > 0) {
-            if (emptyMessage) emptyMessage.style.display = 'none'; // NASCONDI il messaggio
+            if (emptyMessage) emptyMessage.style.display = 'none'; 
             if (listContainer) {
-                listContainer.style.display = 'block'; // MOSTRA la lista
-                listContainer.innerHTML = ''; // Pulisci la lista
+                listContainer.style.display = 'block'; 
+                listContainer.innerHTML = ''; 
 
                 fullListToDisplay.forEach(plantName => {
                     const itemWrapper = document.createElement('div');
@@ -107,9 +101,8 @@ const staticPlants = [
                 });
             }
         } else {
-             // Altrimenti, assicurati che il messaggio vuoto sia visibile
             if (emptyMessage) emptyMessage.style.display = 'block';
-            if (listContainer) listContainer.style.display = 'none'; // NASCONDI la lista
+            if (listContainer) listContainer.style.display = 'none'; 
         }
         
         const uploadInput = document.getElementById('photo-upload-input');
@@ -290,6 +283,7 @@ const staticPlants = [
     color: #000000;
     font-weight: 600;
     font-size: 0.9rem;
+    font-family: monospace;
     text-transform: uppercase;
     cursor: pointer;
     position: static;
@@ -299,23 +293,25 @@ const staticPlants = [
     display: block; 
     margin-top: 2rem;
     margin-bottom: 0; 
-  padding: 0;
+     border-bottom: 2px solid #000000;
+    padding: 0 1.5rem; 
   }
 
   .location-item {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 1.5rem;
-    background-color: pink;
-    border-bottom: 4px solid #ff1d1d;
+    padding: 1.5rem 0; 
+    /* ✅ CORREZIONE APPLICATA: Imposta lo sfondo su trasparente/bianco */
+    background-color: transparent; 
+    border-bottom: 2px solid #000000;
     text-decoration: none;
-    color: #000;
-  
+   
   }
   
   .location-item:first-child {
-      border-top: 4px solid #ce0000;
+      border-top: 2px solid #000000;
+     
   }
 
   .item-details {
@@ -325,8 +321,10 @@ const staticPlants = [
   .item-name {
     font-size: 1.5rem; 
     font-weight: 600;
+   border-bottom: 2px solid #000000;
     margin: 0;
     color: #000;
+   
   }
 
   /* Stili upload e preview */
@@ -352,46 +350,35 @@ const staticPlants = [
  .fullscreen-btn {
       position: absolute;
       z-index: 1010;
-      padding: 10px 15px; /* Keep some padding for easier clicking */
+      padding: 10px 15px; 
       cursor: pointer;
       font-size: 0.9rem;
       text-transform: uppercase;
-      font-weight: 600; /* Keep weight */
-      background: none; /* Remove common background */
-      border: none; /* Remove common border */
-      color: white; /* Default color white */
-       /* Remove properties moved to specific buttons or no longer needed */
-       /* backdrop-filter: blur(10px); */
-       /* border-radius: 8px; */
+      font-weight: 600; 
+      background: none; 
+      border: none; 
+      color: white; 
   }
   .back-btn {
       top: 2.5rem;
       left: 1.5rem;
-       /* Removed background, border etc. inherited from .fullscreen-btn */
   }
    /* Style the SVG inside the back button */
    .back-btn svg {
-       display: block; /* Prevents extra space */
-       width: 24px;   /* Match SVG dimensions */
+       display: block; 
+       width: 24px;   
        height: 24px;
    }
    .back-btn svg path {
-       stroke: white; /* Ensure path is white */
+       stroke: white; 
    }
   .scan-btn {
       bottom: 2.5rem;
       right: 1.5rem;
-      /* --- MODIFICATIONS --- */
-      background: none; /* Explicitly no background */
-      border: none; /* Explicitly no border */
+      background: none; 
+      border: none; 
       color: white;
-      font-family: 'Monument Grotesk Mono Trial', monospace; /* Monospace font */
-      font-weight: 500; /* Match other mono text weight */
-      /* Remove button-specific styles */
-      /* background: white; */
-      /* color: #000; */
-      /* backdrop-filter: blur(10px); */
-      /* border-radius: 8px; */
-      /* border: 1px solid rgba(255, 255, 255, 0.4); */
+      font-family: 'Monument Grotesk Mono Trial', monospace; 
+      font-weight: 500; 
   }
 </style>
