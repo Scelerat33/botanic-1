@@ -228,14 +228,18 @@ import MobileLayout from '../layouts/MobileLayout.astro';
 
     /* --- LAYOUT PAGINA --- */
     .page-wrapper {
-        position: relative;
-        width: 100%;
-        height: 100vh;
-        background: #000;
-        
-        color: white;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        overflow: hidden;
+     position: relative;
+    width: 100%;
+    /* ⚠️ MODIFICA IMPORTANTE: Fissa l'altezza per evitare problemi di 100vh su browser mobili */
+    height: 100%; /* Usa 100% o 100dvh per i moderni browser se MobileLayout fissa il corpo */
+    min-height: 100vh; /* Garantisce l'occupazione completa */
+    max-height: 100vh; /* Impedisce di superare il viewport */
+    
+    background: #000;
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    /* 🛑 CORREZIONE PRINCIPALE: Nasconde qualsiasi contenuto in eccesso */
+    overflow: hidden;
     }
     
     .corner-plus {
